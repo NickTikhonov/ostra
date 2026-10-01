@@ -111,6 +111,47 @@
   font: 11px var(--sans);
   color: #7b877b;
 }
+.scrollHint {
+  flex-shrink: 0;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: #61765f;
+  font: 10px var(--sans);
+  background: linear-gradient(transparent, #d5dece55);
+  border-radius: 0 0 4px 4px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+.scrollHint[data-visible='true'] {
+  opacity: 1;
+}
+.scrollHint[data-visible='true'] svg {
+  animation: scrollNudge 2.4s ease-in-out infinite;
+}
+@keyframes scrollNudge {
+  0%,
+  65%,
+  100% {
+    transform: translateY(-1px);
+    opacity: 0.65;
+  }
+  35% {
+    transform: translateY(3px);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scrollHint {
+    transition: none;
+  }
+  .scrollHint[data-visible='true'] svg {
+    animation: none;
+  }
+}
 @media (pointer: coarse) {
   .search input {
     font-size: 16px;

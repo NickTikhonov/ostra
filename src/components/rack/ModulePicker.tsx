@@ -1,6 +1,6 @@
 'use client';
-import { useId, useLayoutEffect, useRef, useState } from 'react';
-import { Search, X } from 'lucide-react';
+import { useCallback, useId, useLayoutEffect, useRef, useState } from 'react';
+import { ChevronDown, Search, X } from 'lucide-react';
 import { DEFINITIONS, type ModuleType } from '@/lib/modules';
 import styles from './ModulePicker.module.css';
 
@@ -57,6 +57,16 @@ export function ModulePicker({
   const [query, setQuery] = useState(''),
     [active, setActive] = useState(0);
   const [bounds, setBounds] = useState({ left: 0, top: 0, width: 244, height: 292 });
+  const [scrollHint, setScrollHint] = useState({ overflow: false, atTop: true });
+  const measureScroll = useCallback(() => {
+    const container = list.current;
+    if (!container) return;
+    const overflow = container.scrollHeight > container.clientHeight + 1;
+    const atTop = container.scrollTop <= 1;
+    setScrollHint((previous) =>
+      previous.overflow === overflow && previous.atTop === atTop ? previous : { overflow, atTop },
+    );
+  }, []);
   const terms = normalise(query).split(' ').filter(Boolean);
   const results = catalogue.filter((item) => terms.every((term) => item.search.includes(term)));
   const selected = Math.min(active, results.length - 1);
@@ -94,10 +104,16 @@ export function ModulePicker({
     else if (top + option.offsetHeight > container.scrollTop + container.clientHeight)
       container.scrollTop = top + option.offsetHeight - container.clientHeight;
   }, [selected, query]);
+  useLayoutEffect(() => {
+    measureScroll();
+    const observer = new ResizeObserver(measureScroll);
+    if (list.current) observer.observe(list.current);
+    return () => observer.disconnect();
+  }, [measureScroll, results.length, bounds.height]);
 
   const width = Math.min(244, Math.max(0, bounds.width - 16));
   // Reserve the unfiltered height so the search field does not jump while typing.
-  const height = Math.min(52 + Math.min(7, catalogue.length) * 32, Math.max(0, bounds.height - 16));
+  const height = Math.min(74 + Math.min(7, catalogue.length) * 32, Math.max(0, bounds.height - 16));
   const left = Math.max(bounds.left + 8, Math.min(x, bounds.left + bounds.width - width - 8));
   const preferredTop = y + height <= bounds.top + bounds.height - 8 ? y : y - height;
   const top = Math.max(
@@ -184,6 +200,7 @@ export function ModulePicker({
           id={`${id}-results`}
           role="listbox"
           aria-label="Modules"
+          onScroll={measureScroll}
         >
           {results.map(({ type, definition: d }, index) => (
             <button
@@ -203,6 +220,12 @@ export function ModulePicker({
             </button>
           ))}
         </div>
+        {scrollHint.overflow && (
+          <div className={styles.scrollHint} data-visible={scrollHint.atTop} aria-hidden="true">
+            <span>Scroll for more</span>
+            <ChevronDown size={13} />
+          </div>
+        )}
         {!results.length && (
           <div className={styles.empty} role="status">
             No modules found
