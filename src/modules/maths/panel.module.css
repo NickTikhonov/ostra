@@ -1,0 +1,35 @@
+.panel {
+  color: var(--accent);
+}
+.panel :global(.maths-art) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.panel :global(.maths-cycle) {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.panel :global(.maths-cycle) button {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: #f7f2de;
+  border: 2px solid currentColor;
+  padding: 0;
+}
+.panel :global(.maths-cycle) button.on {
+  background: var(--accent);
+}
+.panel :global(.maths-cycle) span {
+  font: 6px var(--mono);
+}
+.panel :global(.fp-dial-scale) {
+  display: none;
+}

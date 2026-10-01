@@ -1,0 +1,718 @@
+/* FIELD: a small family of instruments, not hardware replicas. */
+:root {
+  --ink: #243332;
+  --paper: #eee9d9;
+}
+.canvas {
+  background-color: #252e30;
+  background-image:
+    radial-gradient(#a8b8b622 0.7px, transparent 0.8px), linear-gradient(120deg, #243131, #20272b);
+  background-size:
+    12px 12px,
+    100% 100%;
+}
+.rail {
+  background:
+    repeating-linear-gradient(90deg, transparent 0 17px, #172224 17px 23px, transparent 23px 36px),
+    linear-gradient(#717e7b, #424f4d 44%, #53605b);
+  border-color: #85938a66;
+}
+.module {
+  isolation: isolate;
+  z-index: 2;
+  border-radius: 5px;
+  box-shadow:
+    inset 1px 0 #fff6,
+    inset -1px 0 #0002,
+    2px 4px 10px #07100c66;
+}
+.module-remove {
+  position: absolute;
+  top: 2px;
+  right: 19px;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 20px;
+  padding: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--accent);
+  opacity: 0.35;
+  cursor: pointer;
+}
+.module:hover .module-remove,
+.module:focus-within .module-remove {
+  opacity: 0.8;
+}
+.module .module-remove:hover,
+.module .module-remove:focus-visible {
+  opacity: 1;
+  background: #f7e5dc;
+  color: #963f38;
+}
+.cables {
+  z-index: 10;
+  pointer-events: none;
+}
+.cables clipPath path {
+  fill: white;
+}
+.cable-drawing {
+  pointer-events: none;
+}
+.cable-drawing > path:nth-child(2) {
+  transition:
+    filter 0.15s,
+    stroke-width 0.15s;
+}
+.cable.inspected .cable-drawing > path:nth-child(2) {
+  filter: brightness(1.2);
+  stroke-width: 5.5px;
+}
+.canvas[data-dragging='true'] .cable-hit {
+  pointer-events: none;
+}
+.studio {
+  background: var(--panel);
+  color: #283633;
+  border-color: #16272766;
+  overflow: visible;
+}
+.studio:after {
+  background:
+    linear-gradient(120deg, #ffffff16, transparent 45%),
+    repeating-linear-gradient(0deg, #ffffff04 0 1px, transparent 1px 3px);
+}
+.studio .screw {
+  width: 6px;
+  height: 6px;
+  background: radial-gradient(circle at 30% 20%, #f4eeda, #a2a69a 65%, #555f55);
+  border-color: #6d786177;
+}
+.studio .screw:after {
+  top: 2px;
+}
+.studio .tl,
+.studio .tr {
+  top: 10px;
+}
+.studio .bl,
+.studio .br {
+  bottom: 10px;
+}
+.studio .module-heading {
+  height: 80px;
+  padding: 23px 14px 9px;
+  text-align: left;
+  z-index: 2;
+}
+.studio .module-heading h2 {
+  font: 800 23px/0.95 var(--sans);
+  letter-spacing: -1px;
+  color: var(--accent);
+}
+.studio .module-subtitle {
+  font: 500 8px/1 var(--mono);
+  letter-spacing: 1.8px;
+  opacity: 0.85;
+  margin-top: 9px;
+  color: #263934;
+}
+.studio .module-mark {
+  display: none;
+}
+.studio .module-heading:after {
+  content: '';
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.28;
+}
+.studio .controls {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  pointer-events: none;
+}
+.studio .controls button,
+.studio .controls input {
+  pointer-events: auto;
+}
+.signal-art {
+  position: absolute;
+  width: 108px;
+  height: 51px;
+  right: 12px;
+  top: 97px;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: var(--art-opacity, 0.16);
+  pointer-events: none;
+}
+.studio-dial {
+  position: absolute;
+  transform: translate(-50%, -18px);
+  z-index: 3;
+}
+.studio-dial.hero {
+  transform: translate(-50%, -29px);
+}
+.studio .knob-control {
+  gap: 7px;
+  min-width: 48px;
+}
+.studio .knob-track {
+  width: 36px;
+  height: 36px;
+  margin: 0;
+}
+.studio .knob {
+  width: 35px;
+  height: 35px;
+  background: #263735;
+  border: 1px solid #142d29aa;
+  box-shadow:
+    0 4px 4px #25352940,
+    inset 0 1px #ffffff66;
+}
+.studio .knob:before {
+  inset: 3px;
+  background: linear-gradient(140deg, #f4efdf, #dad6c6);
+  box-shadow:
+    inset 0 1px white,
+    inset 0 -1px #999f9033;
+}
+.studio .knob > span:after {
+  background: var(--accent);
+  height: 11px;
+  width: 3px;
+  top: 4px;
+  left: calc(50% - 1.5px);
+}
+.studio .knob-ticks {
+  inset: -7px;
+  background: repeating-conic-gradient(
+    from 222deg,
+    var(--accent) 0deg 2deg,
+    transparent 2deg 28deg
+  );
+  opacity: 0.6;
+}
+.studio .knob-label {
+  font: 500 7px/1 var(--mono);
+  letter-spacing: 1px;
+  opacity: 0.9;
+  color: #263934;
+}
+.studio .large .knob-track {
+  width: 58px;
+  height: 58px;
+  margin: 0;
+}
+.studio .large .knob {
+  width: 57px;
+  height: 57px;
+  border-width: 2px;
+  background: var(--accent);
+}
+.studio .large .knob:before {
+  inset: 5px;
+  background: linear-gradient(120deg, #f7f1df, #ded9c6);
+}
+.studio .large .knob > span:after {
+  top: 7px;
+  height: 16px;
+  width: 4px;
+  left: calc(50% - 2px);
+}
+.studio .knob-value {
+  font-size: 9px;
+  transform: translateY(55px);
+  z-index: 15;
+  color: #f0e9d3;
+  background: #233736;
+}
+.studio .large .knob-value {
+  transform: translateY(79px);
+}
+.studio .port {
+  height: 25px;
+  gap: 0;
+  z-index: 5;
+}
+.studio .jack {
+  height: 25px;
+  width: 25px;
+  flex-shrink: 0;
+  border: 1px solid #9aab9b;
+  background: conic-gradient(#a7b5a4, #eee9d2, #788e7e, #d4dcc9, #a7b5a4);
+  box-shadow: 0 2px 2px #0006;
+}
+.studio .jack span {
+  width: 14px;
+  height: 14px;
+  background: radial-gradient(circle, #121f1c 40%, #5d7063 51%, #1b2a24 65%);
+}
+.studio .jack.connected span {
+  background: var(--cable-color);
+  border: 3px solid #243332;
+  box-shadow: inset 0 1px 2px #0003;
+}
+.studio .jack:hover,
+.studio .jack.active {
+  outline: 2px solid var(--panel);
+  outline-offset: 3px;
+}
+/* Position labels independently so text never shifts the socket centres. */
+.studio .port-label,
+.studio .port.out .port-label {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 29px;
+  bottom: auto;
+  font: 600 8px/1 var(--mono);
+  letter-spacing: 0.3px;
+  color: #f3efdf;
+  background: none;
+  padding: 0;
+  margin: 0;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.studio .port.out .port-label {
+  top: auto;
+  bottom: 29px;
+}
+.studio .panel-footer {
+  bottom: 9px;
+  font: 500 6px/1 var(--mono);
+  letter-spacing: 1.7px;
+  color: var(--accent);
+  opacity: 0.9;
+}
+.studio-choice {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  z-index: 3;
+}
+.studio-choice > span {
+  font: 500 6px/1 var(--mono);
+  letter-spacing: 1px;
+  color: #263934;
+}
+.studio-choice button {
+  font: 500 8px/1 var(--mono);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #25383344;
+  border-radius: 4px;
+  padding: 7px 8px;
+  background: #f0ecd799;
+  color: var(--accent);
+  box-shadow: 0 2px 0 #26393419;
+  white-space: nowrap;
+  min-height: 25px;
+}
+.studio-choice button:hover {
+  background: #f5efdb;
+}
+.studio-choice i {
+  font-style: normal;
+  opacity: 0.5;
+  font-size: 8px;
+}
+.studio-readout {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font: 500 13px var(--mono);
+  color: var(--accent);
+  white-space: nowrap;
+  padding: 13px 12px;
+  border: 1px solid #25383333;
+  border-radius: 6px;
+  background: #f5f0dd55;
+}
+.studio-action {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font: 7px var(--mono);
+  letter-spacing: 0.5px;
+  border: 1px solid #25383333;
+  border-radius: 4px;
+  padding: 4px 8px;
+  background: #f5f0dd55;
+  color: var(--accent);
+  z-index: 3;
+}
+.studio-steps {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 97px;
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 6px 8px;
+  background: #f5f0de77;
+  border: 1px solid #25383322;
+  border-radius: 6px;
+}
+.studio .step {
+  width: 27px;
+  gap: 5px;
+}
+.studio .step-gate {
+  color: var(--accent);
+}
+.studio .step-gate i {
+  width: 5px;
+  height: 5px;
+  background: #62767744;
+  border-color: #49626b33;
+}
+.studio .step-gate.on i {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: none;
+}
+.studio .step.current .step-gate.on i {
+  background: #fff2a2;
+  box-shadow: 0 0 6px #a18322;
+  border-color: #dfbe68;
+}
+.studio .step input {
+  height: 47px;
+}
+.studio .step input::-webkit-slider-runnable-track {
+  background: #61797944;
+  box-shadow: 1px 0 #fff9;
+}
+.studio .step input::-webkit-slider-thumb {
+  background: var(--accent);
+  border-color: #2c4a50;
+  border-radius: 3px;
+}
+.studio .note {
+  color: var(--accent);
+  font-size: 7px;
+}
+.studio .step.current .note {
+  color: #7a572b;
+}
+/* Archived patches retain their signal contracts, but lose replica branding. */
+.faceplate {
+  background: var(--panel);
+  color: var(--accent);
+}
+.faceplate .module-heading h2 {
+  font: 800 13px var(--sans);
+  letter-spacing: -0.3px;
+  color: var(--accent);
+}
+.faceplate .module-subtitle {
+  font: 6px var(--mono);
+  letter-spacing: 0.5px;
+}
+.faceplate .knob {
+  background: var(--accent);
+  border-color: #24383355;
+}
+.faceplate .knob:before {
+  background: linear-gradient(130deg, #f5efda, #d5d1c0);
+}
+.faceplate .knob > span:after {
+  background: var(--accent);
+}
+.faceplate .fp-toggle {
+  border-radius: 4px;
+  background: #ede7d4;
+  border-color: #24383366;
+}
+.faceplate .panel-footer {
+  font: 5px var(--mono);
+  letter-spacing: 1px;
+}
+.jack-scope {
+  position: fixed;
+  z-index: 60;
+  width: 304px;
+  box-sizing: border-box;
+  padding: 13px 13px 10px;
+  border-radius: 12px;
+  border: 1px solid #9cac9a44;
+  background: #172321f7;
+  box-shadow:
+    0 12px 45px #06161180,
+    inset 0 1px #e7ecd518;
+  color: #dbe8d8;
+  pointer-events: none;
+  backdrop-filter: blur(12px);
+  font: 9px var(--mono);
+}
+.jack-scope header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 8px;
+  letter-spacing: 0.5px;
+}
+.jack-scope header > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.jack-scope header b {
+  color: var(--scope-color);
+  font-size: 7px;
+  letter-spacing: 1px;
+}
+.scope-reading {
+  font: 500 24px var(--mono);
+  padding-top: 10px;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.scope-reading > span {
+  font-size: 11px;
+  opacity: 0.65;
+}
+.scope-reading small {
+  margin-left: auto;
+  font: 7px var(--mono);
+  color: #95a699;
+  max-width: 130px;
+  text-align: right;
+}
+.scope-trace {
+  margin-top: 8px;
+}
+.scope-trace > span {
+  font-size: 7px;
+  letter-spacing: 0.5px;
+  color: #a9b7a6;
+}
+.scope-trace svg {
+  display: block;
+  width: 100%;
+  height: 73px;
+  margin-top: 2px;
+  overflow: visible;
+}
+.scope-trace text {
+  font: 7px var(--mono);
+  fill: #839987;
+}
+.scope-grid {
+  stroke: #bdd9b313;
+  stroke-width: 0.6;
+}
+.scope-zero {
+  stroke: #bdd9b33d;
+  stroke-width: 0.7;
+}
+.jack-scope footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 7px;
+  color: #8eaa98;
+  padding-top: 5px;
+}
+
+/* Modules may opt into compact titles and place inputs/outputs freely. */
+.studio[data-header='compact'] .module-heading {
+  height: 42px;
+  padding: 12px 16px 7px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.studio[data-header='compact'] .module-heading h2 {
+  font-size: 18px;
+  letter-spacing: -0.6px;
+}
+.studio[data-header='compact'] .module-subtitle {
+  font-size: 7px;
+  letter-spacing: 1px;
+  margin: 0;
+}
+.studio .port[data-label-position='above'] .port-label {
+  top: auto;
+  bottom: 29px;
+}
+.studio .port[data-label-position='below'] .port-label {
+  top: 29px;
+  bottom: auto;
+}
+
+/* Shared materials, not a shared control layout. Geometry belongs to each module. */
+.panel-artwork {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.45;
+  pointer-events: none;
+}
+.panel-artwork .wash {
+  fill: #fff7df;
+  fill-opacity: 0.3;
+  stroke-opacity: 0.2;
+}
+.panel-artwork .solid {
+  fill: var(--accent);
+  stroke: none;
+}
+.panel-artwork .faint {
+  opacity: 0.35;
+}
+.panel-legend {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font: 600 7px/1 var(--mono);
+  letter-spacing: 1.2px;
+  color: var(--accent);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.studio[data-header='compact'] .module-heading {
+  padding-right: 25px;
+  gap: 8px;
+}
+.studio[data-header='compact'] .module-subtitle {
+  font-size: 6px;
+  letter-spacing: 0.7px;
+}
+.studio[data-header='compact'] .module-heading:after {
+  height: 1px;
+  opacity: 0.3;
+}
+.studio[data-port-style='badge'] .port-label {
+  color: #273c37;
+}
+.studio[data-port-style='badge'] .port.out:before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: -5px;
+  transform: translateX(-50%);
+  width: 42px;
+  height: 47px;
+  border-radius: 7px;
+  background: #243b37;
+  box-shadow: inset 0 1px #ffffff20;
+}
+.studio[data-port-style='badge'] .port.out .port-label {
+  color: #fff4dc;
+}
+.studio[data-port-style='badge'] .port.out[data-label-position='above']:before {
+  top: -17px;
+}
+.studio[data-port-style='badge'] .jack:hover,
+.studio[data-port-style='badge'] .jack.active {
+  outline-color: var(--accent);
+}
+.studio[data-port-style='badge'] .port.out .jack:hover,
+.studio[data-port-style='badge'] .port.out .jack.active {
+  outline-color: #fff4dc;
+}
+.studio[data-port-style='badge'] .studio-readout {
+  font-size: 18px;
+  letter-spacing: 2px;
+  border: 0;
+  border-radius: 4px;
+  color: #f6edcf;
+  background: #263b37;
+  padding: 8px 11px;
+}
+.studio[data-port-style='badge'] .knob-label {
+  font-size: 9px;
+  letter-spacing: 0.5px;
+}
+.studio[data-port-style='badge'] .port-label {
+  font-size: 9px;
+  letter-spacing: 0.1px;
+}
+.studio[data-port-style='badge'] .panel-footer {
+  display: none;
+}
+.studio[data-port-style='badge'] .studio-choice > span {
+  font-size: 7px;
+  letter-spacing: 0.6px;
+}
+.studio[data-port-style='badge'] .studio-choice button {
+  font-size: 9px;
+}
+.studio[data-port-style='badge'] .panel-legend {
+  font-size: 8px;
+  letter-spacing: 0.8px;
+}
+
+/* Older saved panels need the same readable legends as the current catalogue. */
+.faceplate .module-heading {
+  padding-top: 24px;
+  line-height: 13px;
+}
+.faceplate .module-heading h2 {
+  display: inline-block;
+  vertical-align: top;
+}
+.faceplate .module-subtitle {
+  font-size: 7px;
+  letter-spacing: 0.4px;
+}
+.faceplate .port-label,
+.faceplate .port.out .port-label {
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 500;
+  color: #283633;
+}
+.faceplate .knob-label {
+  font-size: 9px;
+  color: #283633;
+}
+.faceplate .fp-text {
+  font-size: 9px;
+  color: #283633;
+}
+.faceplate .fp-toggle-options {
+  font-size: 8px;
+  line-height: 1.15;
+  opacity: 1;
+  color: #283633;
+}
+.knob-tooltip {
+  position: fixed;
+  z-index: 70;
+  transform: translateX(-50%);
+  pointer-events: none;
+  max-width: 160px;
+  padding: 6px 8px;
+  border: 1px solid #8faaa455;
+  border-radius: 4px;
+  background: #233736;
+  color: #fff4dc;
+  box-shadow: 0 3px 10px #0005;
+  font: 10px/12px var(--mono);
+  white-space: nowrap;
+}

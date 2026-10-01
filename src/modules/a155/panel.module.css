@@ -1,0 +1,30 @@
+.panel :global(.module-heading) {
+  height: 28px;
+  text-align: left;
+  padding: 10px 25px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel :global(.module-subtitle) {
+  margin: 0;
+  font-size: 12px;
+}
+.panel :global(.panel-footer) {
+  text-align: left;
+  left: 26px;
+}
+.panel :global(.knob-label) {
+  display: none;
+}
+.panel :global(.fp-toggle-options) {
+  font-size: 8px;
+}
+.panel :global(.fp-toggle-control) {
+  gap: 4px;
+}
+.panel :global(.fp-engraving) rect {
+  stroke: none;
+  fill: var(--accent);
+  fill-opacity: 0.08;
+}

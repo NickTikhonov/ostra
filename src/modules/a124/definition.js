@@ -1,0 +1,92 @@
+// @ts-check
+/** @type {import("../types").ModuleDefinition} */
+export const definition = {
+  type: 'a124',
+  version: 1,
+  name: 'REED',
+  subtitle: 'FILTER',
+  color: '#61723f',
+  panel: '#c9d99b',
+  width: 128,
+  layout: 'faceplate',
+  footer: 'FIELD / ARCHIVE',
+  inputs: [
+    {
+      id: 'in',
+      label: 'Audio In',
+      x: 28,
+      y: 78,
+      kind: 'audio',
+    },
+    {
+      id: 'cv1',
+      label: 'CV 1',
+      x: 28,
+      y: 135,
+      kind: 'cv',
+    },
+    {
+      id: 'cv2',
+      label: 'CV 2',
+      x: 28,
+      y: 192,
+      kind: 'cv',
+    },
+  ],
+  outputs: [
+    {
+      id: 'band',
+      label: 'BP Out',
+      x: 28,
+      y: 249,
+      kind: 'audio',
+    },
+    {
+      id: 'mix',
+      label: 'LP/HP Out',
+      x: 28,
+      y: 306,
+      kind: 'audio',
+    },
+  ],
+  params: [
+    {
+      id: 'level',
+      label: 'Lev.',
+      min: 0,
+      max: 1,
+      default: 0.65,
+    },
+    {
+      id: 'cutoff',
+      label: 'Frq.',
+      min: 20,
+      max: 18000,
+      default: 1000,
+      log: true,
+      unit: 'Hz',
+    },
+    {
+      id: 'cv2',
+      label: 'CV 2',
+      min: 0,
+      max: 1,
+      default: 0.3,
+    },
+    {
+      id: 'resonance',
+      label: 'Res.',
+      min: 0,
+      max: 1,
+      default: 0.25,
+    },
+    {
+      id: 'mix',
+      label: 'Mix',
+      min: 0,
+      max: 1,
+      default: 0,
+    },
+  ],
+  hidden: true,
+};

@@ -1,0 +1,52 @@
+.panel {
+  --art-opacity: 0.3;
+}
+.freeze {
+  position: absolute;
+  left: 18px;
+  top: 327px;
+  z-index: 3;
+}
+.freezeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 65px;
+  height: 25px;
+  padding: 5px 7px;
+  border: 1px solid #46638266;
+  border-radius: 5px;
+  background: #eae8dc;
+  color: #355372;
+  font: 8px/1 var(--mono);
+  box-shadow: 0 2px 0 #26393419;
+}
+.freezeButton i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #46638255;
+}
+.freezeButton:global(.on) {
+  background: #355372;
+  color: #fff2c9;
+}
+.freezeButton:global(.on) i {
+  background: #ffdf8c;
+  box-shadow: 0 0 4px #ffdf8c;
+}
+.holdLight {
+  position: absolute;
+  left: 76px;
+  top: 280px;
+  width: 5px;
+  height: 5px;
+  background: #48648344;
+  border-radius: 50%;
+  box-shadow: inset 0 1px #25393422;
+}
+.holdLight[data-active='true'] {
+  background: #ffe2a0;
+  box-shadow: 0 0 6px #ffe2a0;
+}

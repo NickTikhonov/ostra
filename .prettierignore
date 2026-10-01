@@ -1,0 +1,10 @@
+node_modules/
+.next/
+out/
+public/runtime/
+public/THIRD_PARTY_NOTICES.txt
+src/modules/*.generated.*
+package-lock.json
+next-env.d.ts
+AGENTS.md
+CLAUDE.md

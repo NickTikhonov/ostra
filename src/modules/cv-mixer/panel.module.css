@@ -1,0 +1,61 @@
+.panel {
+  --panel-design: channel-strips;
+}
+.polarity {
+  position: absolute;
+  left: 239px;
+  display: flex;
+  gap: 4px;
+  pointer-events: none;
+}
+.polarity i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  transition: opacity 0.07s;
+}
+.negative {
+  background: #ad423d;
+  box-shadow: 0 0 3px #ad423d88;
+}
+.positive {
+  background: #237e55;
+  box-shadow: 0 0 3px #237e5588;
+}
+.link12,
+.link23 {
+  position: absolute;
+  right: 16px;
+  z-index: 3;
+}
+.link12 {
+  top: 132px;
+}
+.link23 {
+  top: 230px;
+}
+.link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 20px;
+  padding: 3px 7px;
+  border: 1px solid #35665d55;
+  border-radius: 4px;
+  font: 600 7px/1 var(--mono);
+  color: #31594e;
+  background: #e6edd77d;
+}
+.link i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #35665d44;
+}
+.link:global(.on) {
+  background: #31594e;
+  color: #f3efdf;
+}
+.link:global(.on) i {
+  background: #e8d877;
+}

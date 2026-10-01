@@ -1,0 +1,6 @@
+.panel {
+  --hardware-panel: 1;
+}
+.panel :global(.fp-toggle-options) {
+  font-size: 8px;
+}

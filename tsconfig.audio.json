@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "checkJs": true, "incremental": false, "plugins": [] },
+  "include": ["src/audio/**/*.js", "src/audio/**/*.d.ts", "src/modules/**/*.js"],
+  "exclude": ["node_modules", "public", "out", ".next"]
+}

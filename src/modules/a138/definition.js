@@ -1,0 +1,90 @@
+// @ts-check
+/** @type {import("../types").ModuleDefinition} */
+export const definition = {
+  type: 'a138',
+  version: 1,
+  name: 'BLEND',
+  subtitle: 'MIXER',
+  color: '#35584c',
+  panel: '#abd0b9',
+  width: 128,
+  layout: 'faceplate',
+  footer: 'FIELD / ARCHIVE',
+  inputs: [
+    {
+      id: 'in1',
+      label: 'Input 1',
+      x: 28,
+      y: 74,
+      kind: 'audio',
+    },
+    {
+      id: 'in2',
+      label: 'Input 2',
+      x: 28,
+      y: 131,
+      kind: 'audio',
+    },
+    {
+      id: 'in3',
+      label: 'Input 3',
+      x: 28,
+      y: 188,
+      kind: 'audio',
+    },
+    {
+      id: 'in4',
+      label: 'Input 4',
+      x: 28,
+      y: 245,
+      kind: 'audio',
+    },
+  ],
+  outputs: [
+    {
+      id: 'out',
+      label: 'Output',
+      x: 28,
+      y: 306,
+      kind: 'audio',
+    },
+  ],
+  params: [
+    {
+      id: 'level1',
+      label: 'In 1',
+      min: 0,
+      max: 1,
+      default: 0.75,
+    },
+    {
+      id: 'level2',
+      label: 'In 2',
+      min: 0,
+      max: 1,
+      default: 0,
+    },
+    {
+      id: 'level3',
+      label: 'In 3',
+      min: 0,
+      max: 1,
+      default: 0,
+    },
+    {
+      id: 'level4',
+      label: 'In 4',
+      min: 0,
+      max: 1,
+      default: 0,
+    },
+    {
+      id: 'master',
+      label: 'Out',
+      min: 0,
+      max: 1,
+      default: 0.7,
+    },
+  ],
+  hidden: true,
+};

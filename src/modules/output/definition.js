@@ -1,0 +1,54 @@
+// @ts-check
+/** @type {import("../types").ModuleDefinition} */
+export const definition = {
+  type: 'output',
+  version: 2,
+  name: 'HOME',
+  subtitle: 'OUTPUT',
+  category: 'OUTPUT',
+  order: 8,
+  color: '#645e4c',
+  panel: '#ddd5bc',
+  width: 152,
+  layout: 'studio',
+  footer: 'FIELD / 09',
+  inputs: [
+    {
+      id: 'left',
+      label: 'L / MONO',
+      kind: 'audio',
+      x: 43,
+      y: 85,
+      labelPosition: 'below',
+    },
+    {
+      id: 'right',
+      label: 'R',
+      kind: 'audio',
+      x: 109,
+      y: 85,
+      labelPosition: 'below',
+    },
+  ],
+  outputs: [],
+  params: [
+    {
+      id: 'level',
+      label: 'LEVEL',
+      min: 0,
+      max: 1,
+      default: 0.5,
+    },
+    {
+      id: 'mute',
+      label: 'MUTE',
+      min: 0,
+      max: 1,
+      default: 0,
+      step: 1,
+      smooth: false,
+    },
+  ],
+  headerLayout: 'compact',
+  portStyle: 'badge',
+};

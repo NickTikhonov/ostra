@@ -1,0 +1,40 @@
+{
+  "name": "ostra",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "next build",
+    "start": "node scripts/serve.mjs",
+    "typecheck": "tsc --noEmit && npm run typecheck:audio",
+    "test": "node --test tests/*.test.mjs",
+    "modules:sync": "node scripts/sync-modules.mjs",
+    "prebuild": "npm run modules:sync && npm run notices",
+    "pretypecheck": "npm run modules:sync",
+    "pretest": "npm run modules:sync",
+    "typecheck:audio": "tsc -p tsconfig.audio.json --noEmit",
+    "format": "prettier --write src scripts tests docs README.md CONTRIBUTING.md *.json next.config.ts .github",
+    "format:check": "prettier --check src scripts tests docs README.md CONTRIBUTING.md *.json next.config.ts .github",
+    "notices": "node scripts/third-party-notices.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/dm-sans": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "lucide-react": "^0.468.0",
+    "next": "^16.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "fake-indexeddb": "^6.2.5",
+    "prettier": "^3.9.9",
+    "typescript": "^5.9.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
