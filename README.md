@@ -12,7 +12,7 @@ Patch a melody. Make it wander. Build the instrument you wish existed.
 
 ![ostra: a colourful modular rack with sequencers, oscillators, modulation and effects connected by patch cables](docs/images/ostra-rack.png)
 
-ostra is a local-first modular synthesizer with **22 instruments and utilities**, tactile controls and an open canvas. Connect audio, control voltages and gates to make anything from a single voice to a self-playing patch. Everything runs on your machine—no accounts, API keys or audio backend.
+ostra is a local-first modular synthesizer with **21 instruments and utilities plus a fixed stereo master**, tactile controls and an open canvas. Connect audio, control voltages and gates to make anything from a single voice to a self-playing patch. Everything runs on your machine—no accounts, API keys or audio backend.
 
 > **Experimental alpha.** Ready to explore and contribute to; expect the occasional rough edge.
 
@@ -21,6 +21,7 @@ ostra is a local-first modular synthesizer with **22 instruments and utilities**
 - **A rack you can get lost in.** Colourful, individually designed faceplates, draggable modules and patch cables that fade out of the way while you work.
 - **More than note sequencing.** Sequence arbitrary voltages, quantise four voices to a shared scale, route signals, delay CV and build feedback loops.
 - **A useful palette from the first patch.** Oscillators, envelopes, filters, VCAs, random sources, granular sampling, tape delay, distortion and reverb.
+- **Record a take.** Physical transport buttons, fixed L/R output jacks and a master level knob. Finish recording to download a stereo WAV directly to your device.
 - **Bring your own sounds.** Drop a WAV or MP3 onto GRAIN. Decode, play and store it locally.
 - **Pick up where you left off.** Rack, settings and cables save automatically. Refresh returns to your patch with audio paused.
 - **Make your own modules.** One folder contains a module's definition, React panel and audio processor. Shared knobs, switches and jacks handle the familiar parts.
@@ -36,7 +37,7 @@ npm ci
 npm run dev
 ```
 
-Open **http://127.0.0.1:3000**. A connected starter rack is ready for your first visit. Press **Play** in the bottom-left corner when you want to hear it.
+Open **http://127.0.0.1:3000**. A connected starter rack is ready for your first visit. Press **Play** in the top bar when you want to hear it.
 
 | Gesture                         | What it does                                        |
 | ------------------------------- | --------------------------------------------------- |
@@ -53,16 +54,16 @@ The [rack guide](docs/rack-guide.md) covers patching, persistence, samples and r
 
 ## Inside the rack
 
-| Make sound                          | Move it                                | Shape it                     | Connect it                                         |
-| ----------------------------------- | -------------------------------------- | ---------------------------- | -------------------------------------------------- |
-| **ORBIT** — VCO                     | **PATH** — 8-stage voltage sequencer   | **SIEVE** — filter           | **VEIL** — VCA                                     |
-| **GRAIN** — sampler / granular      | **PRISM** — four-channel quantiser     | **GRIT** — distortion        | **BRAID** — CV mixer / attenuverter                |
-| **CHANCE** — random / sample & hold | **BLOOM** — ADSR envelope              | **ECHO** — delay             | **HARBOUR** — stereo mixer / sends                 |
-|                                     | **DRIFT** — LFO                        | **SPOOL** — tape-style delay | **JUNCTION** — voltage-controlled switch           |
-|                                     | **VECTOR** — dual function generator   | **HALO** — reverb / freeze   | **RELAY** — clocked CV delay                       |
-|                                     | **TICK** — clock · **SPLIT** — divider |                              | **LOGIC** — gates / comparator · **HOME** — output |
+| Make sound                          | Move it                                | Shape it                     | Connect it                               |
+| ----------------------------------- | -------------------------------------- | ---------------------------- | ---------------------------------------- |
+| **ORBIT** — VCO                     | **PATH** — 8-stage voltage sequencer   | **SIEVE** — filter           | **VEIL** — VCA                           |
+| **GRAIN** — sampler / granular      | **PRISM** — four-channel quantiser     | **GRIT** — distortion        | **BRAID** — CV mixer / attenuverter      |
+| **CHANCE** — random / sample & hold | **BLOOM** — ADSR envelope              | **ECHO** — delay             | **HARBOUR** — stereo mixer / sends       |
+|                                     | **DRIFT** — LFO                        | **SPOOL** — tape-style delay | **JUNCTION** — voltage-controlled switch |
+|                                     | **VECTOR** — dual function generator   | **HALO** — reverb / freeze   | **RELAY** — clocked CV delay             |
+|                                     | **TICK** — clock · **SPLIT** — divider |                              | **LOGIC** — gates / comparator           |
 
-All jacks carry sample-rate voltages: the audio/CV labels are guides, not restrictions. Eight archived module types also remain available to existing saved racks. [Read the module guide →](docs/studio-modules.md)
+All jacks carry sample-rate voltages: the audio/CV labels are guides, not restrictions. Nine archived module types also remain available to existing saved racks. [Read the module guide →](docs/studio-modules.md)
 
 ## Build the missing module
 

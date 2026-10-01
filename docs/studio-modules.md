@@ -94,7 +94,7 @@ SPOOL does not replace ECHO or alter a saved rack. Like other effects, it saves 
 ```text
 TICK → SPLIT /2 → PATH CV → PRISM → ORBIT pitch
                    PATH gate → BLOOM → VEIL CV
-ORBIT saw → SIEVE → GRIT → VEIL → ECHO → HOME
+ORBIT saw → SIEVE → GRIT → VEIL → ECHO → fixed master L/MONO
 SPLIT /8 → DRIFT reset; DRIFT sine → SIEVE cutoff
 TICK → ECHO clock; TICK reset → SPLIT reset
 ```
@@ -120,7 +120,7 @@ Hover or keyboard-focus any output, even without a cable, or a connected input f
 - **4 s history** shows modulation, sequences, gate activity, and the amplitude envelope of audio signals.
 - Current voltage, minimum/maximum voltage, and peak-to-peak range help identify DC offsets and unexpected signal levels.
 
-Min/max buckets preserve peaks and short pulses when displaying more samples than there are pixels. Capture starts when selecting a jack; earlier history remains blank. Only one jack is sampled at a time. The inspector does not start audio or persist history. With the transport stopped it shows PAUSED; to inspect silently, mute every output module before starting transport.
+Min/max buckets preserve peaks and short pulses when displaying more samples than there are pixels. Capture starts when selecting a jack; earlier history remains blank. Only one jack is sampled at a time. The inspector does not start audio or persist history. With the transport stopped it shows PAUSED; to inspect silently, mute the fixed master (and any additional legacy HOME outputs) before starting transport.
 
 The faceplate redesign was checked in a silent browser preview and the saved rack, with TypeScript validation and all five storage checks passing. No audio was played or auditioned. Processor code, parameter/port IDs and saved-data formats were unchanged.
 
@@ -175,7 +175,7 @@ Verification used silent numerical processor tests, saved-rack checks and a brow
 
 ## HALO stereo reverb
 
-Add **REVERB · HALO** from the canvas picker. Patch a voice or effect into **L/MONO**, then patch **LEFT** and **RIGHT** to HOME's L and R inputs. An unpatched R input takes the left signal; a patched R is independent. Outputs include the dry/wet mix. For a send/return patch, set MIX to 100%.
+Add **REVERB · HALO** from the canvas picker. Patch a voice or effect into **L/MONO**, then patch **LEFT** and **RIGHT** to the fixed master L and R jacks. An unpatched R input takes the left signal; a patched R is independent. Outputs include the dry/wet mix. For a send/return patch, set MIX to 100%.
 
 - **SIZE:** changes the internal reflection spacing. Changes slew smoothly and can bend the tail's pitch.
 - **DECAY:** nominal low-frequency decay time from 0.2–20 seconds. +5V at DECAY doubles the setting, −5V halves it; the combined range is bounded to 0.15–40 seconds. Damping makes high frequencies fade sooner.

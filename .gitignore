@@ -11,3 +11,4 @@ public/runtime/
 
 # Old local preview; the published screenshot lives in docs/images.
 /rack-preview.png
+.vercel

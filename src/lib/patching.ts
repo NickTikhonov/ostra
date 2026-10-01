@@ -1,4 +1,4 @@
-import { COLORS, DEFINITIONS, type Patch } from './modules';
+import { COLORS, DEFINITIONS, patchModules, type Patch } from './modules';
 
 export type CableEnd = { module: string; port: string; direction: 'in' | 'out' };
 export type PendingCable = { fixed: CableEnd; color: string; cableId?: string };
@@ -36,8 +36,8 @@ export function finishCable(patch: Patch, pending: PendingCable, end: CableEnd):
   if (pending.fixed.direction === end.direction) return null;
   const from = pending.fixed.direction === 'out' ? pending.fixed : end;
   const to = pending.fixed.direction === 'in' ? pending.fixed : end;
-  const source = patch.modules.find((m) => m.id === from.module),
-    target = patch.modules.find((m) => m.id === to.module);
+  const source = patchModules(patch).find((m) => m.id === from.module),
+    target = patchModules(patch).find((m) => m.id === to.module);
   if (
     !source ||
     !target ||

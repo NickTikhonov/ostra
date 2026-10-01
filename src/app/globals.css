@@ -48,13 +48,14 @@ input {
   background: #282a2b;
 }
 .rack-app {
+  --transport-height: 88px;
   height: 100dvh;
   width: 100vw;
   position: relative;
 }
 .canvas-viewport {
   position: absolute;
-  inset: 0;
+  inset: var(--transport-height) 0 0;
   overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: #4c4f4d #252829;
@@ -489,6 +490,16 @@ input {
   pointer-events: none;
   overflow: visible;
   z-index: 6;
+}
+.screen-cables {
+  position: fixed;
+  z-index: 10;
+  overflow: hidden;
+}
+@media (max-width: 540px) {
+  .rack-app {
+    --transport-height: 142px;
+  }
 }
 .cables path {
   fill: none;

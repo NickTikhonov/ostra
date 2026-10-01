@@ -1,9 +1,13 @@
 // @ts-check
 import { RackEngine } from './engine.js';
+import { WavRecorder } from './recorder.js';
 class ModularProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
     this.engine = new RackEngine(sampleRate);
+    this.recorder = new WavRecorder(sampleRate, (message, transfer = []) =>
+      this.port.postMessage(message, transfer),
+    );
     this.frames = 0;
     this.failed = false;
     this.port.onmessage = ({ data }) => {
@@ -13,6 +17,8 @@ class ModularProcessor extends AudioWorkletProcessor {
         if (data.type === 'event') this.engine.dispatch(data.id, data.event);
         if (data.type === 'probe') this.engine.setProbe(data.target);
         if (data.type === 'asset') this.engine.setAsset(data.id, data.asset);
+        if (data.type === 'record-start') this.recorder.start();
+        if (data.type === 'record-stop') this.recorder.stop();
       } catch (error) {
         this.fail(error);
       }
@@ -22,6 +28,7 @@ class ModularProcessor extends AudioWorkletProcessor {
   fail(error) {
     if (this.failed) return;
     this.failed = true;
+    this.recorder.stop('error');
     const module = this.engine.activeModule;
     this.port.postMessage({
       type: 'error',
@@ -48,6 +55,7 @@ class ModularProcessor extends AudioWorkletProcessor {
     }
     // Zero the entire block, including samples written before the exception.
     if (this.failed) for (const channel of out) channel.fill(0);
+    else this.recorder.capture(out[0], out[1]);
     return true;
   }
 }

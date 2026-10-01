@@ -2,6 +2,7 @@ import type { DisplayState } from '@/modules/types';
 import type { Patch } from './modules';
 import type { ProbeTarget, ScopeFrame } from './scope';
 import { getSample } from './sample-assets';
+import { recordingWav } from './wav';
 
 export class AudioEngine {
   context: AudioContext | null = null;
@@ -11,6 +12,11 @@ export class AudioEngine {
   onScope?: (frame: ScopeFrame) => void;
   onError?: (message: string) => void;
   onStopped?: () => void;
+  onRecordingProgress?: (seconds: number) => void;
+  onRecordingComplete?: (wav: Blob, reason: string) => void;
+  private recording: { chunks: ArrayBuffer[]; sampleRate: number } | null = null;
+  private recordingStop: Promise<void> | null = null;
+  private resolveRecording?: () => void;
   private signature = '';
   private wantedAssets = new Set<string>();
   private loadedAssets = new Set<string>();
@@ -41,6 +47,11 @@ export class AudioEngine {
           if (data.type === 'state') this.onState?.(data.modules);
           if (data.type === 'scope') this.onScope?.(data.frame);
           if (data.type === 'error') this.fail(node, data.message);
+          if (data.type === 'recording-chunk' && this.recording) {
+            this.recording.chunks.push(data.chunk);
+            this.onRecordingProgress?.(data.frames / this.recording.sampleRate);
+          }
+          if (data.type === 'recording-done') this.completeRecording(data.reason);
         };
       } catch (error) {
         if (this.context === ctx) await this.close();
@@ -76,6 +87,7 @@ export class AudioEngine {
     const signature = JSON.stringify({
       modules: patch.modules.map(({ id, type, params, data }) => ({ id, type, params, data })),
       cables: patch.cables,
+      output: patch.output,
     });
     if (signature === this.signature) return;
     this.signature = signature;
@@ -137,11 +149,42 @@ export class AudioEngine {
   trigger(id: string, event: string) {
     this.node?.port.postMessage({ type: 'event', id, event });
   }
+  startRecording() {
+    if (!this.node || !this.context || this.context.state !== 'running')
+      throw new Error('Start the transport before recording.');
+    if (this.recording) return;
+    this.recording = { chunks: [], sampleRate: this.context.sampleRate };
+    this.recordingStop = null;
+    this.node.port.postMessage({ type: 'record-start' });
+  }
+  stopRecording(): Promise<void> {
+    if (!this.recording) return Promise.resolve();
+    if (this.recordingStop) return this.recordingStop;
+    this.recordingStop = new Promise((resolve) => {
+      const timeout = setTimeout(() => this.completeRecording('interrupted'), 3000);
+      this.resolveRecording = () => {
+        clearTimeout(timeout);
+        resolve();
+      };
+      this.node?.port.postMessage({ type: 'record-stop' });
+    });
+    return this.recordingStop;
+  }
+  private completeRecording(reason: string) {
+    const recording = this.recording;
+    this.recording = null;
+    this.resolveRecording?.();
+    this.resolveRecording = undefined;
+    this.recordingStop = null;
+    if (recording)
+      this.onRecordingComplete?.(recordingWav(recording.chunks, recording.sampleRate), reason);
+  }
   probe(target: ProbeTarget | null) {
     this.probeTarget = target;
     this.node?.port.postMessage({ type: 'probe', target });
   }
   async stop() {
+    await this.stopRecording();
     const context = this.context;
     if (!context) return;
     this.gain?.gain.setTargetAtTime(0, context.currentTime, 0.01);
@@ -149,6 +192,7 @@ export class AudioEngine {
     if (this.context === context) await context.suspend();
   }
   async close() {
+    this.completeRecording('interrupted');
     const context = this.context,
       node = this.node,
       gain = this.gain;

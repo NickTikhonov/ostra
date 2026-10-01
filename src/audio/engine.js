@@ -36,7 +36,7 @@ export class RackEngine {
   setPatch(patch) {
     /** @type {Map<string,RuntimeModule>} */
     const next = new Map();
-    for (const data of patch.modules) {
+    for (const data of patch.output ? [...patch.modules, patch.output] : patch.modules) {
       const plugin = this.registry[data.type];
       if (!plugin) continue;
       const { definition, processor } = plugin;

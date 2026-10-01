@@ -12,13 +12,23 @@ export type Cable = {
   toPort: string;
   color: string;
 };
-export type Patch = { version: 2; modules: RackModule[]; cables: Cable[]; zoom: number };
+export type Patch = {
+  version: 2;
+  modules: RackModule[];
+  cables: Cable[];
+  zoom: number;
+  output?: RackModule;
+};
+export function patchModules(patch: Patch): RackModule[] {
+  return patch.output ? [...patch.modules, patch.output] : patch.modules;
+}
 export const STORAGE_KEY = 'modular-workshop:patch:v2';
 export const COLORS = ['#e68554', '#83afa1', '#d6b95f', '#9690c6', '#669caf'];
 export const MAX_MODULES = 48;
 // One cable per input: every patch the editor can create must remain loadable.
 export const MAX_CABLES =
-  MAX_MODULES * Math.max(...Object.values(DEFINITIONS).map((d) => d.inputs.length));
+  MAX_MODULES * Math.max(...Object.values(DEFINITIONS).map((d) => d.inputs.length)) +
+  DEFINITIONS.output.inputs.length;
 export const MODULE_HEIGHT = 380;
 export const ROW_HEIGHT = 430;
 export const TOP = 42;
@@ -67,7 +77,8 @@ export function starterPatch(): Patch {
   ];
   return {
     version: 2,
-    modules,
+    modules: modules.filter((m) => m.type !== 'output'),
+    output: modules.find((m) => m.type === 'output'),
     cables: wires.map(([a, b, c, d, color], i) => ({
       id: `initial-${i}`,
       from: `initial-${a}`,
@@ -90,8 +101,9 @@ export function validatePatch(value: unknown): Patch {
     p.cables.length > MAX_CABLES
   )
     throw new Error('Unsupported patch');
+  if (p.output && p.output.type !== 'output') throw new Error('Invalid master output');
   const ids = new Set<string>();
-  const modules = p.modules.map((m) => {
+  const modules = patchModules(p).map((m) => {
     if (!m || !Object.hasOwn(DEFINITIONS, m.type) || typeof m.id !== 'string' || ids.has(m.id))
       throw new Error('Invalid module');
     ids.add(m.id);
@@ -139,9 +151,16 @@ export function validatePatch(value: unknown): Patch {
       return true;
     })
     .map((c) => ({ ...c, color: COLORS.includes(c.color) ? c.color : COLORS[0] }));
+  // Lift the original output out of the rack without changing its ID, cables,
+  // level or mute. Additional legacy outputs stay visible to preserve old mixes.
+  const output =
+    (p.output && modules.find((m) => m.id === p.output!.id)) ||
+    modules.find((m) => m.type === 'output') ||
+    createModule('output');
   return {
     version: 2,
-    modules,
+    modules: modules.filter((m) => m.id !== output.id),
+    output,
     cables,
     zoom: Number.isFinite(p.zoom) ? Math.min(1.5, Math.max(0.5, p.zoom)) : 1,
   };

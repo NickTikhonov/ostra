@@ -1,6 +1,6 @@
 'use client';
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { Play, Square, Plus, Minus, Maximize2, X } from 'lucide-react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { Plus, Minus, Maximize2, X } from 'lucide-react';
 import {
   DEFINITIONS,
   MAX_MODULES,
@@ -9,6 +9,7 @@ import {
   LEFT,
   TOP,
   createModule,
+  patchModules,
   starterPatch,
   type Patch,
   type ModuleType,
@@ -24,6 +25,7 @@ import { Jack } from './rack/Jack';
 import { ModuleHost } from './rack/ModuleHost';
 import { JackScope } from './rack/JackScope';
 import { ModulePicker } from './rack/ModulePicker';
+import { TransportBar } from './rack/TransportBar';
 import { placeModule } from '@/lib/placement';
 import {
   beginCable,
@@ -55,6 +57,16 @@ export default function Rack() {
   const [running, setRunning] = useState(false),
     [busy, setBusy] = useState(false),
     [saved, setSaved] = useState(true);
+  const [recording, setRecording] = useState(false),
+    [recordSeconds, setRecordSeconds] = useState(0);
+  const outputRef = useRef<HTMLDivElement>(null);
+  const [geometry, setGeometry] = useState({
+    origin: { x: 0, y: 88 },
+    left: { x: 0, y: 0 },
+    right: { x: 0, y: 0 },
+    barHeight: 88,
+  });
+  const [scrollVersion, setScrollVersion] = useState(0);
   const [display, setDisplay] = useState<Record<string, DisplayState>>({});
   const [menu, setMenu] = useState<AddMenu | null>(null),
     [wire, setWire] = useState<PendingCable | null>(null),
@@ -136,6 +148,29 @@ export default function Rack() {
     engine.onState = setDisplay;
     engine.onScope = setScopeFrame;
     engine.onError = notify;
+    engine.onRecordingProgress = setRecordSeconds;
+    engine.onRecordingComplete = (blob, reason) => {
+      setRecording(false);
+      if (blob.size <= 44) {
+        notify('No audio captured.');
+        return;
+      }
+      const url = URL.createObjectURL(blob),
+        link = document.createElement('a');
+      link.href = url;
+      link.download = `ostra-${new Date().toISOString().replace(/[:.]/g, '-')}.wav`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      notify(
+        reason === 'limit'
+          ? 'Recording limit reached. WAV downloaded.'
+          : reason === 'stopped'
+            ? 'WAV downloaded.'
+            : 'Recording interrupted. Captured audio downloaded.',
+      );
+    };
     engine.onStopped = () => {
       setRunning(false);
       setDisplay({});
@@ -201,7 +236,7 @@ export default function Rack() {
   }, [patch?.zoom, windowSize.width, windowSize.height]);
   useEffect(() => {
     if (!probe || !patch) return;
-    const module = patch.modules.find((m) => m.id === probe.id);
+    const module = patchModules(patch).find((m) => m.id === probe.id);
     const available =
       module &&
       (probe.direction === 'out'
@@ -229,6 +264,51 @@ export default function Rack() {
       setBusy(false);
     }
   }, [running, busy, notify]);
+  const stopAudio = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await audio.current?.stop();
+      await audio.current?.close();
+      setRunning(false);
+      setDisplay({});
+      setScopeFrame(null);
+      setRecordSeconds(0);
+    } catch (e) {
+      notify(e instanceof Error ? e.message : 'Could not stop audio.');
+    } finally {
+      setBusy(false);
+    }
+  };
+  const toggleRecording = async () => {
+    if (busy || !current.current) return;
+    setBusy(true);
+    try {
+      if (recording) await audio.current?.stopRecording();
+      else {
+        if (!running) {
+          await audio.current?.start(current.current);
+          setRunning(true);
+        }
+        audio.current?.startRecording();
+        setRecordSeconds(0);
+        setRecording(true);
+      }
+    } catch (e) {
+      notify(e instanceof Error ? e.message : 'Could not record audio.');
+    } finally {
+      setBusy(false);
+    }
+  };
+  useEffect(() => {
+    if (!recording) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [recording]);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
@@ -361,6 +441,10 @@ export default function Rack() {
   const setParam = (id: string, key: string, value: number) =>
     update((p) => ({
       ...p,
+      output:
+        p.output?.id === id
+          ? { ...p.output, params: { ...p.output.params, [key]: value } }
+          : p.output,
       modules: p.modules.map((m) =>
         m.id === id ? { ...m, params: { ...m.params, [key]: value } } : m,
       ),
@@ -423,13 +507,37 @@ export default function Rack() {
       port: p.id,
       direction,
       key: `${m.id}:${direction}:${p.id}`,
-      label: `${DEFINITIONS[m.type].name} · ${p.label} ${direction.toUpperCase()}`,
+      label: `${m.id === patch?.output?.id ? 'MASTER' : DEFINITIONS[m.type].name} · ${p.label} ${direction.toUpperCase()}`,
       color: color ?? DEFINITIONS[m.type].panel,
       x: rect.right,
       y: rect.top + rect.height / 2,
     });
   };
-  if (!patch) return <main className="rack-loading" />;
+  useLayoutEffect(() => {
+    const rect = surface.current?.getBoundingClientRect();
+    const output = outputRef.current;
+    if (!rect || !output) return;
+    const center = (port: string) => {
+      const r = output.querySelector(`[data-port="${port}"]`)!.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    };
+    setGeometry({
+      origin: { x: rect.left, y: rect.top },
+      left: center('left'),
+      right: center('right'),
+      barHeight: viewport.current?.getBoundingClientRect().top ?? 88,
+    });
+  }, [patch?.zoom, patch?.output?.id, windowSize, scrollVersion]);
+  if (!patch || !patch.output) return <main className="rack-loading" />;
+  const allModules = patchModules(patch);
+  const project = (point: Point): Point => ({
+    x: geometry.origin.x + point.x * patch.zoom,
+    y: geometry.origin.y + point.y * patch.zoom,
+  });
+  const cablePoint = (m: RackModule, port: string, direction: 'in' | 'out') =>
+    m.id === patch.output?.id
+      ? geometry[port === 'right' ? 'right' : 'left']
+      : project(portPoint(m, port, direction));
   const contentWidth = Math.max(
     1100,
     ...patch.modules.map((m) => m.x + DEFINITIONS[m.type].width + LEFT),
@@ -441,7 +549,14 @@ export default function Rack() {
     ...patch.modules.map((m) => m.y + MODULE_HEIGHT + ROW_HEIGHT),
   );
   const renderPort = (m: RackModule, p: Port, direction: 'in' | 'out') => {
-    const point = portPoint(m, p.id, direction);
+    const fixed = m.id === patch.output?.id;
+    const screen = geometry[p.id === 'right' ? 'right' : 'left'];
+    const point = fixed
+      ? {
+          x: (screen.x - geometry.origin.x) / patch.zoom,
+          y: (screen.y - geometry.origin.y) / patch.zoom,
+        }
+      : portPoint(m, p.id, direction);
     const connectedCable = [...patch.cables]
       .reverse()
       .find((c) =>
@@ -467,9 +582,9 @@ export default function Rack() {
         port={p}
         direction={direction}
         moduleId={m.id}
-        moduleName={DEFINITIONS[m.type].name}
-        x={point.x - m.x}
-        y={point.y - m.y}
+        moduleName={fixed ? 'Master' : DEFINITIONS[m.type].name}
+        x={fixed ? (p.id === 'right' ? 80 : 28) : point.x - m.x}
+        y={fixed ? 25 : point.y - m.y}
         color={visibleCable?.color}
         connected={!!connectedCable}
         active={active}
@@ -507,10 +622,31 @@ export default function Rack() {
   };
   return (
     <main className="rack-app">
+      <TransportBar
+        running={running}
+        busy={busy}
+        recording={recording}
+        seconds={recordSeconds}
+        saved={saved}
+        output={patch.output}
+        outputRef={outputRef}
+        onPlay={() => void toggleAudio()}
+        onStop={() => void stopAudio()}
+        onRecord={() => void toggleRecording()}
+        onBegin={remember}
+        onLevel={(value) => setParam(patch.output!.id, 'level', value)}
+        onMute={() => {
+          remember();
+          setParam(patch.output!.id, 'mute', patch.output!.params.mute ? 0 : 1);
+        }}
+        onHover={(hovered) => setHoveredModule(hovered ? patch.output!.id : null)}
+        renderPort={(port) => renderPort(patch.output!, port, 'in')}
+      />
       <div
         className="canvas-viewport"
         ref={viewport}
         onScroll={() => {
+          setScrollVersion((v) => v + 1);
           setMenu(null);
           setProbe(null);
           setHoveredModule(null);
@@ -606,120 +742,116 @@ export default function Rack() {
                 renderPort={(port, direction) => renderPort(m, port, direction)}
               />
             ))}
-            <svg className="cables" width={width} height={height} aria-label="Patch cables">
-              <defs>
-                <mask
-                  id={`${svgId}-fade`}
-                  maskUnits="userSpaceOnUse"
-                  x="0"
-                  y="0"
-                  width={width}
-                  height={height}
-                >
-                  <rect width={width} height={height} fill="white" />
-                  {patch.modules
-                    .filter((m) => m.id === hoveredModule)
-                    .map((m) => (
-                      <rect
-                        key={m.id}
-                        x={m.x - 4}
-                        y={m.y - 4}
-                        width={DEFINITIONS[m.type].width + 8}
-                        height={MODULE_HEIGHT + 8}
-                        fill="#242424"
-                        rx="7"
-                      />
-                    ))}
-                </mask>
-                <clipPath id={`${svgId}-hits`} clipPathUnits="userSpaceOnUse">
-                  <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d={
-                      `M0 0H${width}V${height}H0Z ` +
-                      patch.modules
-                        .map(
-                          (m) =>
-                            `M${m.x - 3} ${m.y - 3}h${DEFINITIONS[m.type].width + 6}v${MODULE_HEIGHT + 6}h${-DEFINITIONS[m.type].width - 6}Z`,
-                        )
-                        .join(' ')
-                    }
-                  />
-                </clipPath>
-              </defs>
-              {patch.cables
-                .filter((c) => c.id !== wire?.cableId)
-                .map((c) => {
-                  const a = patch.modules.find((m) => m.id === c.from),
-                    b = patch.modules.find((m) => m.id === c.to);
-                  if (!a || !b) return null;
-                  const start = portPoint(a, c.fromPort, 'out'),
-                    end = portPoint(b, c.toPort, 'in'),
-                    path = curve(start, end);
-                  return (
-                    <g
-                      className={`cable ${probe && ((probe.id === c.from && probe.port === c.fromPort && probe.direction === 'out') || (probe.id === c.to && probe.port === c.toPort && probe.direction === 'in')) ? 'inspected' : ''}`}
-                      key={c.id}
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        change((p) => ({ ...p, cables: p.cables.filter((n) => n.id !== c.id) }));
-                      }}
-                    >
-                      <title>{`${DEFINITIONS[a.type].name} ${c.fromPort} → ${DEFINITIONS[b.type].name} ${c.toPort}`}</title>
-                      <path className="cable-hit" d={path} clipPath={`url(#${svgId}-hits)`} />
-                      <g className="cable-drawing" mask={`url(#${svgId}-fade)`}>
-                        <path className="cable-shadow" d={path} />
-                        <path d={path} stroke={c.color} strokeWidth="4.5" />
-                        <path className="cable-highlight" d={path} />
-                        {[start, end].map((p, i) => (
-                          <g key={i}>
-                            <circle cx={p.x} cy={p.y} r="7" fill="#272928" />
-                            <circle cx={p.x} cy={p.y} r="4.3" fill={c.color} />
-                          </g>
-                        ))}
-                      </g>
-                    </g>
-                  );
-                })}
-              {wire &&
-                (() => {
-                  const m = patch.modules.find((m) => m.id === wire.fixed.module);
-                  return m ? (
-                    <path
-                      d={curve(portPoint(m, wire.fixed.port, wire.fixed.direction), cursor)}
-                      stroke={wire.color}
-                      strokeWidth="4"
-                      opacity=".75"
-                      strokeDasharray="5 4"
-                    />
-                  ) : null;
-                })()}
-            </svg>
           </div>
         </div>
       </div>
-      <div className="dock audio-dock">
-        <button
-          className={running ? 'transport-button playing' : 'transport-button'}
-          aria-label={running ? 'Stop audio' : 'Start audio'}
-          title={running ? 'Stop audio (Space)' : 'Start audio (Space)'}
-          disabled={busy}
-          onClick={() => void toggleAudio()}
-        >
-          {running ? (
-            <Square size={13} fill="currentColor" />
-          ) : (
-            <Play size={14} fill="currentColor" />
-          )}
-        </button>
-        <span
-          className={`save-light ${saved ? 'saved' : ''}`}
-          title={saved ? 'Saved on this device' : 'Unsaved changes'}
-          role="status"
-          aria-label={saved ? 'Saved on this device' : 'Unsaved changes'}
-        />
-      </div>
+      <svg
+        className="cables screen-cables"
+        width={windowSize.width}
+        height={windowSize.height}
+        aria-label="Patch cables"
+      >
+        <defs>
+          <clipPath id={`${svgId}-rack`}>
+            <rect y={geometry.barHeight} width={windowSize.width} height={windowSize.height} />
+          </clipPath>
+          <mask
+            id={`${svgId}-fade`}
+            maskUnits="userSpaceOnUse"
+            x="0"
+            y="0"
+            width={windowSize.width}
+            height={windowSize.height}
+          >
+            <rect width={windowSize.width} height={windowSize.height} fill="white" />
+            <rect
+              width={windowSize.width}
+              height={geometry.barHeight}
+              fill={hoveredModule === patch.output.id ? '#242424' : 'white'}
+            />
+            {patch.modules
+              .filter((m) => m.id === hoveredModule)
+              .map((m) => (
+                <rect
+                  key={m.id}
+                  x={project({ x: m.x - 4, y: m.y - 4 }).x}
+                  y={project({ x: m.x - 4, y: m.y - 4 }).y}
+                  width={(DEFINITIONS[m.type].width + 8) * patch.zoom}
+                  height={(MODULE_HEIGHT + 8) * patch.zoom}
+                  fill="#242424"
+                  rx="7"
+                />
+              ))}
+          </mask>
+          <clipPath id={`${svgId}-hits`} clipPathUnits="userSpaceOnUse">
+            <path
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d={
+                `M0 ${geometry.barHeight}H${windowSize.width}V${windowSize.height}H0Z ` +
+                patch.modules
+                  .map(
+                    (m) =>
+                      `M${project({ x: m.x - 3, y: m.y - 3 }).x} ${Math.max(geometry.barHeight, project({ x: m.x - 3, y: m.y - 3 }).y)}h${(DEFINITIONS[m.type].width + 6) * patch.zoom}v${Math.max(0, Math.min((MODULE_HEIGHT + 6) * patch.zoom, project({ x: 0, y: m.y + MODULE_HEIGHT + 3 }).y - geometry.barHeight))}h${(-DEFINITIONS[m.type].width - 6) * patch.zoom}Z`,
+                  )
+                  .join(' ')
+              }
+            />
+          </clipPath>
+        </defs>
+        {patch.cables
+          .filter((c) => c.id !== wire?.cableId)
+          .map((c) => {
+            const a = allModules.find((m) => m.id === c.from),
+              b = allModules.find((m) => m.id === c.to);
+            if (!a || !b) return null;
+            const start = cablePoint(a, c.fromPort, 'out'),
+              end = cablePoint(b, c.toPort, 'in'),
+              path = curve(start, end);
+            return (
+              <g
+                className={`cable ${probe && ((probe.id === c.from && probe.port === c.fromPort && probe.direction === 'out') || (probe.id === c.to && probe.port === c.toPort && probe.direction === 'in')) ? 'inspected' : ''}`}
+                key={c.id}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  change((p) => ({ ...p, cables: p.cables.filter((n) => n.id !== c.id) }));
+                }}
+              >
+                <title>{`${DEFINITIONS[a.type].name} ${c.fromPort} → ${b.id === patch.output?.id ? 'MASTER' : DEFINITIONS[b.type].name} ${c.toPort}`}</title>
+                <path className="cable-hit" d={path} clipPath={`url(#${svgId}-hits)`} />
+                <g
+                  clipPath={b.id === patch.output?.id ? undefined : `url(#${svgId}-rack)`}
+                  className="cable-drawing"
+                  mask={`url(#${svgId}-fade)`}
+                >
+                  <path className="cable-shadow" d={path} />
+                  <path d={path} stroke={c.color} strokeWidth="4.5" />
+                  <path className="cable-highlight" d={path} />
+                  {[start, end].map((p, i) => (
+                    <g key={i}>
+                      <circle cx={p.x} cy={p.y} r="7" fill="#272928" />
+                      <circle cx={p.x} cy={p.y} r="4.3" fill={c.color} />
+                    </g>
+                  ))}
+                </g>
+              </g>
+            );
+          })}
+        {wire &&
+          (() => {
+            const m = allModules.find((m) => m.id === wire.fixed.module);
+            return m ? (
+              <path
+                d={curve(cablePoint(m, wire.fixed.port, wire.fixed.direction), project(cursor))}
+                stroke={wire.color}
+                strokeWidth="4"
+                opacity=".75"
+                strokeDasharray="5 4"
+              />
+            ) : null;
+          })()}
+      </svg>
       <div className="dock zoom-dock">
         <button
           aria-label="Zoom out"

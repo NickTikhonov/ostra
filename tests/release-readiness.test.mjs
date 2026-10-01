@@ -10,6 +10,7 @@ const libs = await loadLib([
   'sample-assets',
   'sample-maintenance',
   'audio',
+  'wav',
 ]);
 after(libs.close);
 const { createModule, DEFINITIONS, STORAGE_KEY } = await libs.load('modules');
@@ -20,7 +21,13 @@ const { getSample, pruneSamples, importSample, releaseImportedSample } =
   await libs.load('sample-assets');
 const { sampleReferences, startSampleMaintenance } = await libs.load('sample-maintenance');
 globalThis.indexedDB = indexedDB;
-const empty = () => ({ version: 2, modules: [], cables: [], zoom: 1 });
+const empty = () => ({
+  version: 2,
+  modules: [],
+  output: createModule('output'),
+  cables: [],
+  zoom: 1,
+});
 const storage = () => {
   const data = new Map();
   return { getItem: (key) => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
@@ -90,6 +97,10 @@ test('257+ editor-created cables survive saving, loading and reconnection', () =
 const contexts = [],
   nodes = [];
 class FakeContext {
+  sampleRate = 48000;
+  get state() {
+    return this.resumed ? 'running' : 'suspended';
+  }
   currentTime = 0;
   audioWorklet = { addModule: async () => {} };
   destination = {};
@@ -138,6 +149,50 @@ class FakeNode {
 }
 globalThis.AudioContext = FakeContext;
 globalThis.AudioWorkletNode = FakeNode;
+
+test('stopping transport waits for the final recording chunk before suspending', async () => {
+  const engine = new AudioEngine(),
+    completed = [];
+  engine.onRecordingComplete = (wav, reason) => completed.push({ wav, reason });
+  await engine.start(empty());
+  engine.startRecording();
+  const node = engine.node,
+    context = engine.context;
+  assert.equal(node.messages.at(-1).type, 'record-start');
+  const stopped = engine.stop();
+  assert.equal(node.messages.at(-1).type, 'record-stop');
+  assert.equal(context.resumed, true);
+  node.port.onmessage({
+    data: { type: 'recording-chunk', chunk: new ArrayBuffer(512), frames: 128 },
+  });
+  node.port.onmessage({ data: { type: 'recording-done', reason: 'stopped' } });
+  await stopped;
+  assert.equal(context.resumed, false);
+  assert.equal(completed.length, 1);
+  assert.equal(completed[0].wav.size, 556);
+  assert.equal(completed[0].reason, 'stopped');
+  await engine.close();
+  assert.equal(completed.length, 1);
+});
+
+test('processor failure salvages captured WAV chunks and permits another recording', async () => {
+  const engine = new AudioEngine(),
+    completed = [];
+  engine.onRecordingComplete = (wav, reason) => completed.push({ wav, reason });
+  await engine.start(empty());
+  engine.startRecording();
+  engine.node.port.onmessage({
+    data: { type: 'recording-chunk', chunk: new ArrayBuffer(16), frames: 4 },
+  });
+  engine.node.onprocessorerror();
+  assert.equal(completed[0].wav.size, 60);
+  assert.equal(completed[0].reason, 'interrupted');
+  await engine.start(empty());
+  engine.startRecording();
+  engine.node.port.onmessage({ data: { type: 'recording-done', reason: 'stopped' } });
+  assert.equal(completed.length, 2);
+  await engine.close();
+});
 
 test('a missing sample leaves only its sampler empty and reports once per start', async () => {
   await seed('available');

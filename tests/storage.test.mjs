@@ -21,7 +21,7 @@ for (const name of ['modules', 'placement', 'storage']) {
   await writeFile(join(dir, `${name}.mjs`), result);
 }
 after(() => rm(dir, { recursive: true, force: true }));
-const { starterPatch, validatePatch, STORAGE_KEY } = await import(
+const { starterPatch, validatePatch, createModule, STORAGE_KEY } = await import(
   pathToFileURL(join(dir, 'modules.mjs')).href
 );
 const { saveRack, restoreRack } = await import(pathToFileURL(join(dir, 'storage.mjs')).href);
@@ -44,13 +44,13 @@ test('rack settings, cables, module positions and steps survive saving and resto
 });
 test('intentionally empty rack stays empty across refresh', () => {
   const storage = memory(),
-    patch = { version: 2, modules: [], cables: [], zoom: 1 };
+    patch = { version: 2, modules: [], output: createModule('output'), cables: [], zoom: 1 };
   saveRack(storage, patch);
   assert.deepEqual(restoreRack(storage).patch, patch);
 });
 test('first visit gets one fully connected default patch', () => {
   const result = restoreRack(memory());
-  assert.equal(result.patch.modules.length, 12);
+  assert.equal(result.patch.modules.length, 11);
   assert.equal(result.patch.cables.length, 15);
   assert.equal(result.recovered, false);
 });
@@ -60,7 +60,7 @@ test('damaged save is backed up before recovering', () => {
   const result = restoreRack(storage);
   assert.equal(result.recovered, true);
   assert.equal(storage.getItem(`${STORAGE_KEY}:recovery`), 'broken JSON');
-  assert.equal(result.patch.modules.length, 12);
+  assert.equal(result.patch.modules.length, 11);
 });
 test('validation removes dangling connections and bounds unsafe settings', () => {
   const patch = starterPatch();
@@ -189,7 +189,7 @@ test('new module controls and sample references persist without putting audio by
     toPort: 'position',
     color: '#e68554',
   };
-  const patch = { version: 2, modules, cables: [cable], zoom: 1 },
+  const patch = { version: 2, modules, output: createModule('output'), cables: [cable], zoom: 1 },
     storage = memory();
   saveRack(storage, patch);
   assert.deepEqual(restoreRack(storage).patch, patch);

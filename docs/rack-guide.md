@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:3000. Press the bottom-left play button to enable audio.
+Open http://127.0.0.1:3000. Press Play in the top transport bar to enable audio.
 
 - Click empty rack space to add a module. `A` also opens the compact picker. Type a name or function to filter, use ↑/↓ and Enter to add, or scroll the list. Escape dismisses it. The picker stays inside the visible viewport, including when opened near the bottom.
 - Use the small trash button at the top of a module to remove it. Right-clicking its panel does not delete it. Undo with the removal notice or `Cmd/Ctrl+Z`; redo with `Cmd/Ctrl+Shift+Z`.
@@ -112,3 +112,13 @@ The production build exports `out/`. Deploy that directory at a site's root with
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for the workflow. CI verifies formatting, UI and DSP types, silent regression tests, the static build and production dependency advisories. Third-party licenses, including fonts, are generated into [public/THIRD_PARTY_NOTICES.txt](../public/THIRD_PARTY_NOTICES.txt) and included in `out/` at build time.
 
 The project license must be selected before the public open-source release. Hardware references describe functional inspiration; the panels and processors are original digital implementations, not manufacturer-endorsed emulations.
+
+## Transport, master output and recording
+
+The fixed top bar has physical Play/Pause, Stop and Record buttons. Play resumes the current patch; Pause suspends it; Stop rewinds all processor state. Space toggles Play/Pause when the canvas has focus.
+
+Patch your final signal into the fixed L/MONO and R jacks beside the level knob. L/MONO feeds both speakers until R is patched. Level and mute are saved with the rack and support undo. The original HOME output migrates into this bar, preserving its ID, wiring and settings. Additional HOME modules in older multi-output patches remain visible so existing mixes are preserved. HOME is no longer offered by the picker.
+
+Record starts transport if needed and captures the bounded stereo master as 16-bit PCM WAV at the audio context's native sample rate. Press Finish to end a take and download it locally while playback continues. Pause or Stop also finishes and downloads the recording. Recordings include output level and mute; no microphone, backend, upload or audio file is stored in localStorage. The timer reports captured audio time.
+
+Each take automatically finishes and downloads at ten minutes or 64 MiB of PCM data, whichever comes first, to bound browser memory. A processor failure salvages chunks already received. Finish a take before closing or refreshing the tab; recordings are not persistent and navigation can prevent downloading.

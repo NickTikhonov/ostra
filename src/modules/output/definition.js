@@ -2,6 +2,7 @@
 /** @type {import("../types").ModuleDefinition} */
 export const definition = {
   type: 'output',
+  hidden: true,
   version: 2,
   name: 'HOME',
   subtitle: 'OUTPUT',
