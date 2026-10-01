@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Plus, Minus, Maximize2, X } from 'lucide-react';
 import {
   DEFINITIONS,
@@ -22,6 +22,7 @@ import { AudioEngine } from '@/lib/audio';
 import { MODULES } from '@/modules/registry.generated';
 import type { DisplayState } from '@/modules/types';
 import { Jack } from './rack/Jack';
+import { CableLayer, portPoint } from './rack/CableLayer';
 import { ModuleHost } from './rack/ModuleHost';
 import { JackScope } from './rack/JackScope';
 import { ModulePicker } from './rack/ModulePicker';
@@ -38,18 +39,7 @@ import type { ProbeAnchor, ScopeFrame } from '@/lib/scope';
 
 type Point = { x: number; y: number };
 type AddMenu = Point & { screenX: number; screenY: number };
-function portPoint(m: RackModule, port: string, direction: 'in' | 'out'): Point {
-  const d = DEFINITIONS[m.type],
-    ports = direction === 'in' ? d.inputs : d.outputs;
-  const socket = ports.find((p) => p.id === port)!;
-  return { x: m.x + socket.x, y: m.y + socket.y };
-}
-function curve(a: Point, b: Point) {
-  const sag = 42 + Math.min(115, Math.abs(a.x - b.x) * 0.17);
-  return `M${a.x},${a.y} C${a.x},${a.y + sag} ${b.x},${b.y + sag} ${b.x},${b.y}`;
-}
 export default function Rack() {
-  const svgId = useId().replace(/:/g, '');
   const [hoveredModule, setHoveredModule] = useState<string | null>(null);
   const [probe, setProbe] = useState<ProbeAnchor | null>(null),
     [scopeFrame, setScopeFrame] = useState<ScopeFrame | null>(null);
@@ -60,13 +50,6 @@ export default function Rack() {
   const [recording, setRecording] = useState(false),
     [recordSeconds, setRecordSeconds] = useState(0);
   const outputRef = useRef<HTMLDivElement>(null);
-  const [geometry, setGeometry] = useState({
-    origin: { x: 0, y: 88 },
-    left: { x: 0, y: 0 },
-    right: { x: 0, y: 0 },
-    barHeight: 88,
-  });
-  const [scrollVersion, setScrollVersion] = useState(0);
   const [display, setDisplay] = useState<Record<string, DisplayState>>({});
   const [menu, setMenu] = useState<AddMenu | null>(null),
     [wire, setWire] = useState<PendingCable | null>(null),
@@ -513,31 +496,7 @@ export default function Rack() {
       y: rect.top + rect.height / 2,
     });
   };
-  useLayoutEffect(() => {
-    const rect = surface.current?.getBoundingClientRect();
-    const output = outputRef.current;
-    if (!rect || !output) return;
-    const center = (port: string) => {
-      const r = output.querySelector(`[data-port="${port}"]`)!.getBoundingClientRect();
-      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-    };
-    setGeometry({
-      origin: { x: rect.left, y: rect.top },
-      left: center('left'),
-      right: center('right'),
-      barHeight: viewport.current?.getBoundingClientRect().top ?? 88,
-    });
-  }, [patch?.zoom, patch?.output?.id, windowSize, scrollVersion]);
   if (!patch || !patch.output) return <main className="rack-loading" />;
-  const allModules = patchModules(patch);
-  const project = (point: Point): Point => ({
-    x: geometry.origin.x + point.x * patch.zoom,
-    y: geometry.origin.y + point.y * patch.zoom,
-  });
-  const cablePoint = (m: RackModule, port: string, direction: 'in' | 'out') =>
-    m.id === patch.output?.id
-      ? geometry[port === 'right' ? 'right' : 'left']
-      : project(portPoint(m, port, direction));
   const contentWidth = Math.max(
     1100,
     ...patch.modules.map((m) => m.x + DEFINITIONS[m.type].width + LEFT),
@@ -550,13 +509,16 @@ export default function Rack() {
   );
   const renderPort = (m: RackModule, p: Port, direction: 'in' | 'out') => {
     const fixed = m.id === patch.output?.id;
-    const screen = geometry[p.id === 'right' ? 'right' : 'left'];
-    const point = fixed
-      ? {
-          x: (screen.x - geometry.origin.x) / patch.zoom,
-          y: (screen.y - geometry.origin.y) / patch.zoom,
-        }
-      : portPoint(m, p.id, direction);
+    const point = fixed ? { x: 0, y: 0 } : portPoint(m, p.id, direction);
+    const wirePoint = (element: HTMLElement) => {
+      if (!fixed) return point;
+      const jack = element.getBoundingClientRect(),
+        canvas = surface.current!.getBoundingClientRect();
+      return {
+        x: (jack.left + jack.width / 2 - canvas.left) / patch.zoom,
+        y: (jack.top + jack.height / 2 - canvas.top) / patch.zoom,
+      };
+    };
     const connectedCable = [...patch.cables]
       .reverse()
       .find((c) =>
@@ -596,13 +558,13 @@ export default function Rack() {
           if (e.button !== 0) return;
           e.stopPropagation();
           const started = !wireRef.current;
-          if (started) startWire(end, point, e.shiftKey);
+          if (started) startWire(end, wirePoint(e.currentTarget), e.shiftKey);
           wirePointer.current = { id: e.pointerId, start: end, started };
         }}
         onClick={(e) => {
           // Pointer gestures finish on window pointer-up; native keyboard/AT clicks do not.
           if (e.detail !== 0) return;
-          wireRef.current ? connect(end) : startWire(end, point, e.shiftKey);
+          wireRef.current ? connect(end) : startWire(end, wirePoint(e.currentTarget), e.shiftKey);
         }}
         onContextMenu={(e) => {
           e.preventDefault();
@@ -619,6 +581,18 @@ export default function Rack() {
         }}
       />
     );
+  };
+  const cableProps = {
+    patch,
+    hoveredModule,
+    probe,
+    wire,
+    cursor,
+    surface,
+    viewport,
+    output: outputRef,
+    onRemove: (id: string) =>
+      change((p) => ({ ...p, cables: p.cables.filter((c) => c.id !== id) })),
   };
   return (
     <main className="rack-app">
@@ -646,7 +620,6 @@ export default function Rack() {
         className="canvas-viewport"
         ref={viewport}
         onScroll={() => {
-          setScrollVersion((v) => v + 1);
           setMenu(null);
           setProbe(null);
           setHoveredModule(null);
@@ -703,6 +676,7 @@ export default function Rack() {
                 <span className="row-number">{String(i + 1).padStart(2, '0')}</span>
               </div>
             ))}
+            <CableLayer {...cableProps} width={width} height={height} />
             {patch.modules.map((m) => (
               <ModuleHost
                 key={m.id}
@@ -745,113 +719,7 @@ export default function Rack() {
           </div>
         </div>
       </div>
-      <svg
-        className="cables screen-cables"
-        width={windowSize.width}
-        height={windowSize.height}
-        aria-label="Patch cables"
-      >
-        <defs>
-          <clipPath id={`${svgId}-rack`}>
-            <rect y={geometry.barHeight} width={windowSize.width} height={windowSize.height} />
-          </clipPath>
-          <mask
-            id={`${svgId}-fade`}
-            maskUnits="userSpaceOnUse"
-            x="0"
-            y="0"
-            width={windowSize.width}
-            height={windowSize.height}
-          >
-            <rect width={windowSize.width} height={windowSize.height} fill="white" />
-            <rect
-              width={windowSize.width}
-              height={geometry.barHeight}
-              fill={hoveredModule === patch.output.id ? '#242424' : 'white'}
-            />
-            {patch.modules
-              .filter((m) => m.id === hoveredModule)
-              .map((m) => (
-                <rect
-                  key={m.id}
-                  x={project({ x: m.x - 4, y: m.y - 4 }).x}
-                  y={project({ x: m.x - 4, y: m.y - 4 }).y}
-                  width={(DEFINITIONS[m.type].width + 8) * patch.zoom}
-                  height={(MODULE_HEIGHT + 8) * patch.zoom}
-                  fill="#242424"
-                  rx="7"
-                />
-              ))}
-          </mask>
-          <clipPath id={`${svgId}-hits`} clipPathUnits="userSpaceOnUse">
-            <path
-              fillRule="evenodd"
-              clipRule="evenodd"
-              d={
-                `M0 ${geometry.barHeight}H${windowSize.width}V${windowSize.height}H0Z ` +
-                patch.modules
-                  .map(
-                    (m) =>
-                      `M${project({ x: m.x - 3, y: m.y - 3 }).x} ${Math.max(geometry.barHeight, project({ x: m.x - 3, y: m.y - 3 }).y)}h${(DEFINITIONS[m.type].width + 6) * patch.zoom}v${Math.max(0, Math.min((MODULE_HEIGHT + 6) * patch.zoom, project({ x: 0, y: m.y + MODULE_HEIGHT + 3 }).y - geometry.barHeight))}h${(-DEFINITIONS[m.type].width - 6) * patch.zoom}Z`,
-                  )
-                  .join(' ')
-              }
-            />
-          </clipPath>
-        </defs>
-        {patch.cables
-          .filter((c) => c.id !== wire?.cableId)
-          .map((c) => {
-            const a = allModules.find((m) => m.id === c.from),
-              b = allModules.find((m) => m.id === c.to);
-            if (!a || !b) return null;
-            const start = cablePoint(a, c.fromPort, 'out'),
-              end = cablePoint(b, c.toPort, 'in'),
-              path = curve(start, end);
-            return (
-              <g
-                className={`cable ${probe && ((probe.id === c.from && probe.port === c.fromPort && probe.direction === 'out') || (probe.id === c.to && probe.port === c.toPort && probe.direction === 'in')) ? 'inspected' : ''}`}
-                key={c.id}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  change((p) => ({ ...p, cables: p.cables.filter((n) => n.id !== c.id) }));
-                }}
-              >
-                <title>{`${DEFINITIONS[a.type].name} ${c.fromPort} → ${b.id === patch.output?.id ? 'MASTER' : DEFINITIONS[b.type].name} ${c.toPort}`}</title>
-                <path className="cable-hit" d={path} clipPath={`url(#${svgId}-hits)`} />
-                <g
-                  clipPath={b.id === patch.output?.id ? undefined : `url(#${svgId}-rack)`}
-                  className="cable-drawing"
-                  mask={`url(#${svgId}-fade)`}
-                >
-                  <path className="cable-shadow" d={path} />
-                  <path d={path} stroke={c.color} strokeWidth="4.5" />
-                  <path className="cable-highlight" d={path} />
-                  {[start, end].map((p, i) => (
-                    <g key={i}>
-                      <circle cx={p.x} cy={p.y} r="7" fill="#272928" />
-                      <circle cx={p.x} cy={p.y} r="4.3" fill={c.color} />
-                    </g>
-                  ))}
-                </g>
-              </g>
-            );
-          })}
-        {wire &&
-          (() => {
-            const m = allModules.find((m) => m.id === wire.fixed.module);
-            return m ? (
-              <path
-                d={curve(cablePoint(m, wire.fixed.port, wire.fixed.direction), project(cursor))}
-                stroke={wire.color}
-                strokeWidth="4"
-                opacity=".75"
-                strokeDasharray="5 4"
-              />
-            ) : null;
-          })()}
-      </svg>
+      <CableLayer {...cableProps} screen width={windowSize.width} height={windowSize.height} />
       <div className="dock zoom-dock">
         <button
           aria-label="Zoom out"
