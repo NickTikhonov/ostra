@@ -1,5 +1,5 @@
 // @ts-check
-import { clamp } from '../../audio/dsp.js';
+import { clamp, gentleTimeScale } from '../../audio/dsp.js';
 const divisions = [0.25, 0.5, 1, 1.5, 2];
 /** @satisfies {import('../types').ModuleProcessor<{buffer:Float32Array;write:number;filter:number;clock:boolean;elapsed:number;period:number;seen:boolean;delay:number}>} */
 const processor = {
@@ -24,7 +24,7 @@ const processor = {
     s.clock = clock;
     const seconds = clamp(
       (connected.clock ? s.period * divisions[Math.round(p.division)] : p.time) *
-        Math.pow(2, clamp(i.time, -4, 4)),
+        gentleTimeScale(i.time),
       0.002,
       4,
     );

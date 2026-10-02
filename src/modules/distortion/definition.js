@@ -55,7 +55,7 @@ export const definition = {
       label: 'MIX',
       min: 0,
       max: 1,
-      default: 0.85,
+      default: 0.1,
     },
     {
       id: 'tone',

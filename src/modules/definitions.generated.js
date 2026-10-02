@@ -23,13 +23,14 @@ import { definition as module20 } from './quantiser/definition.js';
 import { definition as module21 } from './random/definition.js';
 import { definition as module22 } from './reverb/definition.js';
 import { definition as module23 } from './sampler/definition.js';
-import { definition as module24 } from './sequencer/definition.js';
-import { definition as module25 } from './shift-register/definition.js';
-import { definition as module26 } from './slope/definition.js';
-import { definition as module27 } from './stereo-mixer/definition.js';
-import { definition as module28 } from './switch/definition.js';
-import { definition as module29 } from './tape-delay/definition.js';
-import { definition as module30 } from './vca/definition.js';
+import { definition as module24 } from './saturator/definition.js';
+import { definition as module25 } from './sequencer/definition.js';
+import { definition as module26 } from './shift-register/definition.js';
+import { definition as module27 } from './slope/definition.js';
+import { definition as module28 } from './stereo-mixer/definition.js';
+import { definition as module29 } from './switch/definition.js';
+import { definition as module30 } from './tape-delay/definition.js';
+import { definition as module31 } from './vca/definition.js';
 export const DEFINITIONS = {
   'a110': module0,
   'a124': module1,
@@ -55,11 +56,12 @@ export const DEFINITIONS = {
   'random': module21,
   'reverb': module22,
   'sampler': module23,
-  'sequencer': module24,
-  'shift-register': module25,
-  'slope': module26,
-  'stereo-mixer': module27,
-  'switch': module28,
-  'tape-delay': module29,
-  'vca': module30,
+  'saturator': module24,
+  'sequencer': module25,
+  'shift-register': module26,
+  'slope': module27,
+  'stereo-mixer': module28,
+  'switch': module29,
+  'tape-delay': module30,
+  'vca': module31,
 };

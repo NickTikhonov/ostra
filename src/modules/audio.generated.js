@@ -24,13 +24,14 @@ import module20 from './quantiser/processor.js';
 import module21 from './random/processor.js';
 import module22 from './reverb/processor.js';
 import module23 from './sampler/processor.js';
-import module24 from './sequencer/processor.js';
-import module25 from './shift-register/processor.js';
-import module26 from './slope/processor.js';
-import module27 from './stereo-mixer/processor.js';
-import module28 from './switch/processor.js';
-import module29 from './tape-delay/processor.js';
-import module30 from './vca/processor.js';
+import module24 from './saturator/processor.js';
+import module25 from './sequencer/processor.js';
+import module26 from './shift-register/processor.js';
+import module27 from './slope/processor.js';
+import module28 from './stereo-mixer/processor.js';
+import module29 from './switch/processor.js';
+import module30 from './tape-delay/processor.js';
+import module31 from './vca/processor.js';
 export const AUDIO_MODULES = {
   'a110': { definition: DEFINITIONS['a110'], processor: module0 },
   'a124': { definition: DEFINITIONS['a124'], processor: module1 },
@@ -56,11 +57,12 @@ export const AUDIO_MODULES = {
   'random': { definition: DEFINITIONS['random'], processor: module21 },
   'reverb': { definition: DEFINITIONS['reverb'], processor: module22 },
   'sampler': { definition: DEFINITIONS['sampler'], processor: module23 },
-  'sequencer': { definition: DEFINITIONS['sequencer'], processor: module24 },
-  'shift-register': { definition: DEFINITIONS['shift-register'], processor: module25 },
-  'slope': { definition: DEFINITIONS['slope'], processor: module26 },
-  'stereo-mixer': { definition: DEFINITIONS['stereo-mixer'], processor: module27 },
-  'switch': { definition: DEFINITIONS['switch'], processor: module28 },
-  'tape-delay': { definition: DEFINITIONS['tape-delay'], processor: module29 },
-  'vca': { definition: DEFINITIONS['vca'], processor: module30 },
+  'saturator': { definition: DEFINITIONS['saturator'], processor: module24 },
+  'sequencer': { definition: DEFINITIONS['sequencer'], processor: module25 },
+  'shift-register': { definition: DEFINITIONS['shift-register'], processor: module26 },
+  'slope': { definition: DEFINITIONS['slope'], processor: module27 },
+  'stereo-mixer': { definition: DEFINITIONS['stereo-mixer'], processor: module28 },
+  'switch': { definition: DEFINITIONS['switch'], processor: module29 },
+  'tape-delay': { definition: DEFINITIONS['tape-delay'], processor: module30 },
+  'vca': { definition: DEFINITIONS['vca'], processor: module31 },
 };

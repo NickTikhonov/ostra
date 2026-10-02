@@ -23,13 +23,14 @@ import module20 from './quantiser';
 import module21 from './random';
 import module22 from './reverb';
 import module23 from './sampler';
-import module24 from './sequencer';
-import module25 from './shift-register';
-import module26 from './slope';
-import module27 from './stereo-mixer';
-import module28 from './switch';
-import module29 from './tape-delay';
-import module30 from './vca';
+import module24 from './saturator';
+import module25 from './sequencer';
+import module26 from './shift-register';
+import module27 from './slope';
+import module28 from './stereo-mixer';
+import module29 from './switch';
+import module30 from './tape-delay';
+import module31 from './vca';
 export const MODULES = {
   'a110': module0,
   'a124': module1,
@@ -55,11 +56,12 @@ export const MODULES = {
   'random': module21,
   'reverb': module22,
   'sampler': module23,
-  'sequencer': module24,
-  'shift-register': module25,
-  'slope': module26,
-  'stereo-mixer': module27,
-  'switch': module28,
-  'tape-delay': module29,
-  'vca': module30,
+  'saturator': module24,
+  'sequencer': module25,
+  'shift-register': module26,
+  'slope': module27,
+  'stereo-mixer': module28,
+  'switch': module29,
+  'tape-delay': module30,
+  'vca': module31,
 };

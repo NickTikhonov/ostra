@@ -1,5 +1,5 @@
 // @ts-check
-import { clamp, random, TAU } from '../../audio/dsp.js';
+import { clamp, gentleTimeScale, random, TAU } from '../../audio/dsp.js';
 
 /** @typedef {{buffer:Float32Array;write:number;delay:number;tone1:number;tone2:number;
  * dcIn:number;dcOut:number;clock:boolean;elapsed:number;period:number;seen:boolean;
@@ -48,7 +48,7 @@ const processor = {
     }
     s.clock = clock;
     const seconds = clamp(
-      (connected.clock && s.seen ? s.period : p.time) * Math.pow(2, clamp(i.time, -4, 4)),
+      (connected.clock && s.seen ? s.period : p.time) * gentleTimeScale(i.time),
       0.015,
       4,
     );

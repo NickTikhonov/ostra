@@ -237,3 +237,24 @@ test('dual voice upgrades retain existing channels and restore all added control
   saveRack(storage, migrated);
   assert.deepEqual(restoreRack(storage).patch, migrated);
 });
+
+test('AMBER stereo routing and settings persist without changing a saved distortion mix', () => {
+  const patch = starterPatch(),
+    storage = memory();
+  const amber = createModule('saturator', 42, 902);
+  amber.params.warmth = 0.7;
+  amber.params.level = 0.8;
+  patch.modules.push(amber);
+  const grit = patch.modules.find((m) => m.type === 'distortion');
+  grit.params.mix = 0.85;
+  patch.cables.push({
+    id: 'amber-left',
+    from: grit.id,
+    fromPort: 'out',
+    to: amber.id,
+    toPort: 'left',
+    color: '#e68554',
+  });
+  saveRack(storage, patch);
+  assert.deepEqual(restoreRack(storage).patch, patch);
+});

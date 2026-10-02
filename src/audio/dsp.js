@@ -18,3 +18,6 @@ export function blep(t, dt) {
   }
   return 0;
 }
+/** Gentle time modulation around the knob: ±5V gives at most ±10%.
+ * @param {number} voltage */
+export const gentleTimeScale = (voltage) => 1 + clamp(voltage / 5, -1, 1) * 0.1;

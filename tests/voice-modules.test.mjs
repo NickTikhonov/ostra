@@ -37,22 +37,22 @@ test('PATH defaults to ±10V without rescaling a saved sequence or its editing r
 test('BLOOM independently voltage-controls attack, decay, sustain and release', () => {
   const t = setup('envelope', { attack: 0.1, decay: 0.1, sustain: 0.5, release: 0.1 });
   t.c.inputs.gate = 5;
-  t.c.inputs.attack = 1;
-  near(t.step(0.1).env, 2.5); // +1V doubles attack to 200ms.
-  near(t.step(0.1).env, 5);
-  t.c.inputs.decay = 1;
-  near(t.step(0.1).env, 3.75); // Half way to 50% sustain at 200ms decay.
-  near(t.step(0.11).env, 2.5);
+  t.c.inputs.attack = 5;
+  near(t.step(0.055).env, 2.5); // +5V adds 10%: 110ms attack.
+  near(t.step(0.055).env, 5);
+  t.c.inputs.decay = 5;
+  near(t.step(0.055).env, 3.75); // Half way through 110ms decay.
+  near(t.step(0.06).env, 2.5);
   t.c.inputs.sustain = 2.5;
   near(t.step().env, 5);
   t.c.inputs.sustain = -2.5;
   near(t.step().env, 0);
   t.c.inputs.sustain = 0;
   t.step();
-  t.c.inputs.release = 1;
+  t.c.inputs.release = 5;
   t.c.inputs.gate = 0;
-  near(t.step(0.05).env, 1.25);
-  const ended = t.step(0.051);
+  near(t.step(0.0275).env, 1.25);
+  const ended = t.step(0.029);
   near(ended.env, 0);
   assert.equal(ended.end, 5);
   near(ended.inv, 0);

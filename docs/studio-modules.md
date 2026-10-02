@@ -1,6 +1,6 @@
 # FIELD modules
 
-FIELD is a family of twenty-three original digital modules. Knobs, switches, jack behaviour and panel materials are shared; each instrument owns its control layout, socket positions, printed signal flow and independent processor. There is no standard patch bay. No manufacturer artwork or logos are used in the current catalogue.
+FIELD is a family of twenty-four original digital modules. Knobs, switches, jack behaviour and panel materials are shared; each instrument owns its control layout, socket positions, printed signal flow and independent processor. There is no standard patch bay. No manufacturer artwork or logos are used in the current catalogue.
 
 ## Modules
 
@@ -13,7 +13,7 @@ FIELD is a family of twenty-three original digital modules. Knobs, switches, jac
 | **PATH · VOLTAGE / 8** | Eight continuous voltage stages with a default −10…+10V editing range, 1–8-stage length, five playback orders, glide, and direct STAGE CV selection. Independent gate probabilities/lengths, rests, skips, and lockable randomisation/mutation.                             |
 | **ORBIT · VCO**        | Simultaneous sine, triangle, saw, and pulse. 1V/oct pitch, coarse/fine tune, exponential FM, pulse width/PWM, and hard sync. Saw and pulse use band-limited edge corrections.                                                                                               |
 | **SIEVE · VCF**        | State-variable filter with simultaneous lowpass, bandpass, and highpass outputs. Cutoff, resonance, and signed cutoff-CV depth. LEVEL CV retains the earlier filter's lowpass-output amplitude control for save compatibility.                                              |
-| **ECHO · DELAY**       | Fractional delay with filtered, bounded feedback. TIME CV changes the delay exponentially. Patching CLOCK uses the measured pulse interval and the selected ratio. MIX blends dry/wet; WET is available separately. Delay time is limited to four seconds.                  |
+| **ECHO · DELAY**       | Fractional delay with filtered, bounded feedback. TIME CV offsets the base delay by at most ±10%. Patching CLOCK uses the measured pulse interval and the selected ratio. MIX blends dry/wet; WET is available separately. Delay time is limited to four seconds.           |
 | **HALO · REVERB**      | Stereo algorithmic reverb with size, decay, pre-delay, tone, width and mix. Mono input normalisation, decay/mix CV, and a latched or gate-controlled freeze.                                                                                                                |
 | **SPOOL · TAPE DELAY** | Tape-inspired lo-fi echo with record saturation, darkening repeats, pitch bends as TIME changes, wow/flutter, wear/dropouts, and hiss. REGEN CV controls feedback; SYNC follows incoming clock intervals. MIX and WET outputs.                                              |
 | **GRIT · DISTORTION**  | Cascaded FUZZ, asymmetric RAZOR clipping, or FOLD. DRIVE extends to 96; DIRT adds edge emphasis, bias starvation, asymmetric clipping, and coarse crushing. DRIVE CV, tone filtering, dry/wet blend, four nonlinear processing substeps, and DC blocking on the wet signal. |
@@ -78,7 +78,7 @@ Add **CV MIXER · BRAID** from the canvas menu. It starts with all gains at zero
 
 ## Dirt and tape
 
-GRIT's existing parameter and port IDs remain compatible. Older saved settings are retained and receive a DIRT value of 60%; the three mode positions now select FUZZ, RAZOR, and FOLD. New instances start with stronger drive and an 85% wet mix. DIRT at zero removes the starvation gate and crushing; higher settings make quiet tails splutter and add coarser edges. The tone control still lets you darken the result.
+GRIT's existing parameter and port IDs remain compatible. Older saved settings are retained and receive a DIRT value of 60%; the three mode positions now select FUZZ, RAZOR, and FOLD. New instances start at a subtle 10% wet mix; saved MIX settings are preserved. Double-click MIX to reset an existing module to the new default. DIRT at zero removes the starvation gate and crushing; higher settings make quiet tails splutter and add coarser edges. The tone control still lets you darken the result.
 
 Add **TAPE DELAY · SPOOL** from the empty-canvas menu. Patch a voice into SIGNAL, then MIX into an output or another effect. Use WET for parallel routing. It is a digital tape-inspired effect, with these controls:
 
@@ -194,6 +194,19 @@ Knobs, freeze state, position and cables save with the rack. The audio tail is r
 
 - **GRAIN** now occupies 400px rather than 560px (29% narrower). Its sample drop area, waveform, six controls and stereo outputs remain on the faceplate; saved sample references and playback settings are unchanged.
 - **PATH** opens new instances with the full −10…+10V slider range. Existing saved editing ranges and literal step voltages are retained. Range changes never rescale a sequence.
-- **BLOOM** accepts individual attack, decay, sustain and release CV. The knobs set the base values. +1V doubles a time, −1V halves it, bounded to the respective knob limits. Sustain CV adds 20 percentage points per volt and clamps to 0–100%. Unpatched CV inputs preserve the original ADSR behaviour.
+- **BLOOM** accepts individual attack, decay, sustain and release CV. The knobs set the base values. ±5V offsets a time by ±10%, clamped at that depth even with larger CV signals and bounded to the respective knob limits. Sustain CV adds 20 percentage points per volt and clamps to 0–100%. Unpatched CV inputs preserve the original ADSR behaviour.
 - **VEIL** has independent A/B amplifiers for audio or CV. Each channel has BIAS, CV depth and a linear/exponential CURVE blend; +5V fully opens a channel at the default CV depth. No signals are normalled or mixed between channels. Existing VEIL settings and cables become channel A unchanged; channel B starts closed.
 - **SPROUT** is a simpler pair of AD envelopes. A rising trigger or the channel's TRIG button starts an attack to +5V, then a decay to zero even if the input remains high. Retriggering starts a new attack from the current voltage. Attack spans 1ms–8s, decay 3ms–15s; each END output gives a 10ms pulse when decay finishes. Both channels have independent timing and activity lights.
+
+## AMBER stereo saturation and gentle time CV
+
+**AMBER · SATURATOR** adds soft-knee compression, gentle asymmetry and high-frequency rounding. L/MONO feeds both channels until R is patched; the channels then process independently.
+
+- DRIVE sets saturation from 1× to 6×. Pre-drive gain is compensated in the wet path, so higher drive compresses peaks rather than multiplying output volume.
+- WARMTH increases subtle asymmetry and lowers the wet tone cutoff from 16kHz to 4kHz. A DC blocker removes the offset introduced by asymmetric saturation.
+- MIX blends dry and wet; LEVEL trims the result. Defaults are 1.5× drive, 35% warmth, 50% mix and unity level. MIX at zero passes the dry signal unchanged at unity level.
+- The soft clipper uses first-order antiderivative antialiasing. It is an original analog-inspired effect, not a circuit emulation.
+
+ECHO and SPOOL TIME CV, and BLOOM attack/decay/release CV, now use a gentle proportional offset: zero volts preserves the knob setting, +5V adds 10%, and −5V subtracts 10%. Larger signals clamp to the same ±10% limit. For example, a 300ms delay stays within 270–330ms. Clocked delays apply this offset to their clock-derived time; existing smoothing remains. The underlying time limits still apply.
+
+GRIT now defaults to a 10% wet mix. Existing saved MIX settings stay intact; double-click its MIX knob to adopt the gentler default.

@@ -1,14 +1,14 @@
 // @ts-check
-import { clamp } from '../../audio/dsp.js';
+import { clamp, gentleTimeScale } from '../../audio/dsp.js';
 /** @satisfies {import('../types').ModuleProcessor<{value:number;stage:number;gate:boolean;trigger:boolean;end:number}>} */
 const processor = {
   createState: () => ({ value: 0, stage: 0, gate: false, trigger: false, end: 0 }),
   process({ inputs: i, params: p, outputs: o, state: s, sampleRate: sr }) {
-    // Time CV: +1V doubles the knob time, -1V halves it. Sustain: +5V adds 100%.
-    const attack = clamp(p.attack * 2 ** clamp(i.attack ?? 0, -10, 10), 0.001, 8);
-    const decay = clamp(p.decay * 2 ** clamp(i.decay ?? 0, -10, 10), 0.003, 10);
+    // Time CV: ±5V offsets the knob time by at most ±10%. Sustain: +5V adds 100%.
+    const attack = clamp(p.attack * gentleTimeScale(i.attack ?? 0), 0.001, 8);
+    const decay = clamp(p.decay * gentleTimeScale(i.decay ?? 0), 0.003, 10);
     const sustain = clamp(p.sustain + (i.sustain ?? 0) / 5, 0, 1);
-    const release = clamp(p.release * 2 ** clamp(i.release ?? 0, -10, 10), 0.003, 15);
+    const release = clamp(p.release * gentleTimeScale(i.release ?? 0), 0.003, 15);
     const gate = i.gate > 1,
       trigger = i.retrigger > 1;
     if ((gate && !s.gate) || (trigger && !s.trigger)) s.stage = 1;
