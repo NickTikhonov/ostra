@@ -1,6 +1,6 @@
 # FIELD modules
 
-FIELD is a family of twenty-four original digital modules. Knobs, switches, jack behaviour and panel materials are shared; each instrument owns its control layout, socket positions, printed signal flow and independent processor. There is no standard patch bay. No manufacturer artwork or logos are used in the current catalogue.
+FIELD is a family of twenty-six original digital modules. Knobs, switches, jack behaviour and panel materials are shared; each instrument owns its control layout, socket positions, printed signal flow and independent processor. There is no standard patch bay. No manufacturer artwork or logos are used in the current catalogue.
 
 ## Modules
 
@@ -200,13 +200,33 @@ Knobs, freeze state, position and cables save with the rack. The audio tail is r
 
 ## AMBER stereo saturation and gentle time CV
 
-**AMBER · SATURATOR** adds soft-knee compression, gentle asymmetry and high-frequency rounding. L/MONO feeds both channels until R is patched; the channels then process independently.
+**AMBER · SATURATOR** ranges from subtle soft-knee colour to dense asymmetric distortion, with bass emphasis and high-frequency rounding. L/MONO feeds both channels until R is patched; the channels then process independently.
 
-- DRIVE sets saturation from 1× to 6×. Pre-drive gain is compensated in the wet path, so higher drive compresses peaks rather than multiplying output volume.
-- WARMTH increases subtle asymmetry and lowers the wet tone cutoff from 16kHz to 4kHz. A DC blocker removes the offset introduced by asymmetric saturation.
+- DRIVE spans 1×–40×. Gain compensation follows drive only up to 2×, then holds: this keeps gentle settings controlled without burying the heavily saturated signal underneath the dry mix. SCORCH multiplies pre-drive gain by another 10× (+20dB). LEVEL trims the final blend.
+- WARMTH increases asymmetric clipping and lowers the wet tone cutoff from 16kHz to 4kHz. At higher drive it also emphasizes low/mid frequencies before clipping and adds stronger even harmonics. A DC blocker removes the introduced offset.
 - MIX blends dry and wet; LEVEL trims the result. Defaults are 1.5× drive, 35% warmth, 50% mix and unity level. MIX at zero passes the dry signal unchanged at unity level.
-- The soft clipper uses first-order antiderivative antialiasing. It is an original analog-inspired effect, not a circuit emulation.
+- The HEAT needle follows the louder channel’s pre-clip drive level, with a fast rise and slower fall; MIX and LEVEL do not change its reading. 0dB references a 5V-peak sine before saturation. It is a relative drive meter, not a calibrated output VU meter.
+- The soft clipper uses first-order antiderivative antialiasing. The drive-sensitive meter and wide gain range take inspiration from [Decapitator’s documented behaviour](https://www.soundtoys.com/wp-content/uploads/Decapitator-Manual.pdf). DSP and artwork are original; this is not an emulation of its proprietary circuit models.
+- Existing parameter and port IDs are preserved. Saved DRIVE values remain in their original units; SCORCH starts off in old patches.
 
 ECHO and SPOOL TIME CV, and BLOOM attack/decay/release CV, now use a gentle proportional offset: zero volts preserves the knob setting, +5V adds 10%, and −5V subtracts 10%. Larger signals clamp to the same ±10% limit. For example, a 300ms delay stays within 270–330ms. Clocked delays apply this offset to their clock-derived time; existing smoothing remains. The underlying time limits still apply.
 
 GRIT now defaults to a 10% wet mix. Existing saved MIX settings stay intact; double-click its MIX knob to adopt the gentler default.
+
+## TINE percussion voice and PULSE Euclidean sequencer
+
+These are separate modules: patch **PULSE HIT A → TINE TRIG**, then **TINE OUT → master L/MONO**. PULSE defaults to five hits across sixteen steps, using an internal 110BPM sixteenth-note clock. Press the main Play button to start.
+
+**TINE** is an original additive percussion voice inspired by the harmonic and struck-resonator ideas in the [Plaits manual](https://pichenettes.github.io/mutable-instruments-documentation/modules/plaits/manual/). It does not use Plaits firmware or emulate its complete model collection. Four overlapping strikes each use sixteen damped sine partials, with a short attack, an optional noise transient, frequency-dependent damping, and suppression of ultrasonic partials. Output is bounded to ±5V before LEVEL.
+
+- **Pluck** uses near-harmonic partials and an excitation-position spectrum; **Bell** spreads them into metallic ratios; **Wood** approaches struck-bar ratios with stronger high-partial damping.
+- **TUNE** shifts the fundamental from C4, defaulting to C3; 1V/OCT sets pitch. **COLOR** controls brightness and **MORPH** changes the material/spectral distribution. Their CV inputs add 10 percentage points per volt, with the result clamped to the knob range.
+- **DECAY** is the approximate fundamental decay time to −60dB (40ms–6s). DECAY CV applies the shared ±10% maximum offset. **STRIKE** adds a short noise transient; **LEVEL** adjusts the complete voice continuously.
+- Pitch/model/timbre/decay and ACCENT are sampled on each rising trigger. Unpatched ACCENT gives full velocity; when patched, 0–5V maps to silent–full. STRIKE manually triggers the voice while transport runs. An unpatched TRIG stays silent. New hits overlap earlier tails, up to four voices; the quietest voice is reused with a short transition when necessary.
+
+**PULSE** has three independent tracks in the same 320px panel. A, B and C share a clock but each has its own 1–32 STEPS, HITS, ROTATE and CHANCE. Three concentric rings show all patterns and playheads together: A outside, B in the middle, C inside. Select A/B/C below the display to edit that track with the four shared knobs; switching tracks does not interrupt playback. The centre and selectors show hits/length. Different lengths create polymetric patterns. HITS greater than STEPS are treated as every step; rotation wraps within the selected length. Each track has its own probability generator, so editing one does not alter the others.
+
+- Unpatched CLOCK uses TEMPO at four steps per beat. Patching CLOCK suspends the internal clock and advances on incoming rising edges.
+- HIT A, HIT B and HIT C emit the corresponding track’s successful hits. REST A emits track A’s complementary non-hit steps, excluding probability-skipped hits. CYCLE A fires at track A’s step one regardless of probability. The original HIT/REST/CYCLE port IDs and track A parameters remain compatible with older patches; new tracks default to 7/16 and 3/16. Outputs are +5V pulses, normally 10ms, shortened for fast clocks to retain a low interval.
+- RESET/input or the on-panel reset button returns all three tracks to step one on the next external edge, or immediately with the internal clock. Reset and clock on the same sample play step one.
+- Settings, module positions and all cables save with the rack. Runtime tails and sequencer position restart when the engine is stopped.

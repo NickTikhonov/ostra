@@ -258,3 +258,81 @@ test('AMBER stereo routing and settings persist without changing a saved distort
   saveRack(storage, patch);
   assert.deepEqual(restoreRack(storage).patch, patch);
 });
+
+test('percussion voice and Euclidean pattern survive saving with trigger and output connections', () => {
+  const storage = memory(),
+    rhythm = createModule('euclidean', 42, 42),
+    voice = createModule('percussion', 378, 42),
+    output = createModule('output');
+  rhythm.params.steps = 13;
+  rhythm.params.hits = 7;
+  rhythm.params.rotate = 4;
+  rhythm.params.chance = 0.8;
+  Object.assign(rhythm.params, {
+    stepsB: 5,
+    hitsB: 2,
+    rotateB: 3,
+    chanceB: 0.7,
+    stepsC: 7,
+    hitsC: 4,
+    rotateC: 2,
+    chanceC: 0.4,
+  });
+  voice.params.model = 1;
+  voice.params.decay = 2.3;
+  voice.params.morph = 0.6;
+  const patch = {
+    version: 2,
+    zoom: 1,
+    modules: [rhythm, voice],
+    output,
+    cables: [
+      {
+        id: 'trigger',
+        from: rhythm.id,
+        fromPort: 'hit',
+        to: voice.id,
+        toPort: 'trigger',
+        color: '#e68554',
+      },
+      {
+        id: 'audio',
+        from: voice.id,
+        fromPort: 'out',
+        to: output.id,
+        toPort: 'left',
+        color: '#83afa1',
+      },
+    ],
+  };
+  saveRack(storage, patch);
+  assert.deepEqual(restoreRack(storage).patch, patch);
+});
+
+test('single-track PULSE saves retain parameters and cables while gaining tracks B and C', () => {
+  const rhythm = createModule('euclidean'),
+    voice = createModule('percussion');
+  rhythm.version = 1;
+  rhythm.params = { steps: 13, hits: 7, rotate: 4, chance: 0.8, tempo: 123 };
+  const cables = ['hit', 'rest', 'cycle'].map((port, n) => ({
+    id: `legacy-${n}`,
+    from: rhythm.id,
+    fromPort: port,
+    to: voice.id,
+    toPort: ['trigger', 'accent', 'pitch'][n],
+    color: '#e68554',
+  }));
+  const restored = validatePatch({
+    version: 2,
+    zoom: 1,
+    modules: [rhythm, voice],
+    output: createModule('output'),
+    cables,
+  });
+  assert.deepEqual(restored.cables, cables);
+  for (const [key, value] of Object.entries(rhythm.params))
+    assert.equal(restored.modules[0].params[key], value);
+  assert.equal(restored.modules[0].params.stepsB, 16);
+  assert.equal(restored.modules[0].params.hitsB, 7);
+  assert.equal(restored.modules[0].params.hitsC, 3);
+});

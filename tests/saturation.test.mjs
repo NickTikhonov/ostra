@@ -28,6 +28,10 @@ function sine(t, amplitude = 5) {
   let dry = 0,
     wet = 0,
     mean = 0,
+    fundamentalSin = 0,
+    fundamentalCos = 0,
+    secondSin = 0,
+    secondCos = 0,
     thirdSin = 0,
     thirdCos = 0;
   const sr = t.c.sampleRate;
@@ -42,6 +46,10 @@ function sine(t, amplitude = 5) {
       dry += x * x;
       wet += y * y;
       mean += y;
+      fundamentalSin += y * Math.sin(phase);
+      fundamentalCos += y * Math.cos(phase);
+      secondSin += y * Math.sin(2 * phase);
+      secondCos += y * Math.cos(2 * phase);
       thirdSin += y * Math.sin(3 * phase);
       thirdCos += y * Math.cos(3 * phase);
     }
@@ -49,6 +57,8 @@ function sine(t, amplitude = 5) {
   return {
     ratio: Math.sqrt(wet / dry),
     mean: mean / sr,
+    fundamental: (2 * Math.hypot(fundamentalSin, fundamentalCos)) / sr,
+    second: (2 * Math.hypot(secondSin, secondCos)) / sr,
     third: (2 * Math.hypot(thirdSin, thirdCos)) / sr,
   };
 }
@@ -94,13 +104,47 @@ test('AMBER supports mono normalisation, independent stereo, exact dry mix and s
   assert.deepEqual(quiet.step(1000), { left: 0, right: 0 });
 });
 test('AMBER remains bounded under extreme inputs and parameter changes', () => {
-  const t = setup('saturator', { drive: 6, warmth: 1, mix: 1, level: 1.5 });
+  const t = setup('saturator', { drive: 40, scorch: 1, warmth: 1, mix: 1, level: 1.5 });
   for (let n = 0; n < 20000; n++) {
     t.c.inputs.left = n % 2 ? 40 : -40;
-    t.c.params.drive = n % 5 ? 6 : 1;
+    t.c.params.drive = n % 5 ? 40 : 1;
+    t.c.params.scorch = n % 7 ? 1 : 0;
     t.c.params.warmth = n % 3 ? 1 : 0;
     for (const v of Object.values(t.step())) assert.ok(Number.isFinite(v) && Math.abs(v) < 30);
   }
+});
+for (const sr of [44100, 48000, 96000]) {
+  test(`AMBER maximum drive gives strong harmonics even at half mix at ${sr}Hz`, () => {
+    for (const amplitude of [1, 5]) {
+      const mild = sine(setup('saturator', { drive: 1 }, sr), amplitude);
+      const hot = sine(setup('saturator', { drive: 40 }, sr), amplitude);
+      assert.ok(
+        hot.third / hot.fundamental > 0.1,
+        `max drive harmonic ratio ${hot.third / hot.fundamental}`,
+      );
+      assert.ok(hot.third > mild.third * 5);
+      // The wet signal must not disappear below the dry signal as drive rises.
+      assert.ok(hot.ratio > 0.7);
+      assert.ok(Math.abs(hot.mean) < 0.005);
+    }
+  });
+}
+test('AMBER warmth adds even harmonics; SCORCH adds 20dB and the meter follows drive, not output', () => {
+  const neutral = sine(setup('saturator', { drive: 6, warmth: 0, mix: 1 }));
+  const warm = sine(setup('saturator', { drive: 6, warmth: 1, mix: 1 }));
+  assert.ok(warm.second > neutral.second + 0.1);
+  const low = setup('saturator', { drive: 2, warmth: 0, mix: 1 });
+  const high = setup('saturator', { drive: 2, scorch: 1, warmth: 0, mix: 1, level: 0.2 });
+  const a = sine(low, 1),
+    b = sine(high, 1);
+  assert.ok(b.third / b.fundamental > (a.third / a.fundamental) * 5);
+  const read = (t) => t.p.getDisplayState(t.c.state).driveDb;
+  assert.ok(Math.abs(read(high) - read(low) - 20) < 0.01);
+  const before = read(high);
+  high.c.inputs.left = 0;
+  high.step(48000 * 3);
+  assert.ok(read(high) < before - 35);
+  assert.ok(Number.isFinite(read(setup('saturator'))));
 });
 test('time CV is proportional to the knob and clamps at ±10%, including extreme voltages', () => {
   for (const [cv, scale] of [

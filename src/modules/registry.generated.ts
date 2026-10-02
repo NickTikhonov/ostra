@@ -13,24 +13,26 @@ import module10 from './distortion';
 import module11 from './divider';
 import module12 from './dual-envelope';
 import module13 from './envelope';
-import module14 from './filter';
-import module15 from './lfo';
-import module16 from './logic';
-import module17 from './maths';
-import module18 from './oscillator';
-import module19 from './output';
-import module20 from './quantiser';
-import module21 from './random';
-import module22 from './reverb';
-import module23 from './sampler';
-import module24 from './saturator';
-import module25 from './sequencer';
-import module26 from './shift-register';
-import module27 from './slope';
-import module28 from './stereo-mixer';
-import module29 from './switch';
-import module30 from './tape-delay';
-import module31 from './vca';
+import module14 from './euclidean';
+import module15 from './filter';
+import module16 from './lfo';
+import module17 from './logic';
+import module18 from './maths';
+import module19 from './oscillator';
+import module20 from './output';
+import module21 from './percussion';
+import module22 from './quantiser';
+import module23 from './random';
+import module24 from './reverb';
+import module25 from './sampler';
+import module26 from './saturator';
+import module27 from './sequencer';
+import module28 from './shift-register';
+import module29 from './slope';
+import module30 from './stereo-mixer';
+import module31 from './switch';
+import module32 from './tape-delay';
+import module33 from './vca';
 export const MODULES = {
   'a110': module0,
   'a124': module1,
@@ -46,22 +48,24 @@ export const MODULES = {
   'divider': module11,
   'dual-envelope': module12,
   'envelope': module13,
-  'filter': module14,
-  'lfo': module15,
-  'logic': module16,
-  'maths': module17,
-  'oscillator': module18,
-  'output': module19,
-  'quantiser': module20,
-  'random': module21,
-  'reverb': module22,
-  'sampler': module23,
-  'saturator': module24,
-  'sequencer': module25,
-  'shift-register': module26,
-  'slope': module27,
-  'stereo-mixer': module28,
-  'switch': module29,
-  'tape-delay': module30,
-  'vca': module31,
+  'euclidean': module14,
+  'filter': module15,
+  'lfo': module16,
+  'logic': module17,
+  'maths': module18,
+  'oscillator': module19,
+  'output': module20,
+  'percussion': module21,
+  'quantiser': module22,
+  'random': module23,
+  'reverb': module24,
+  'sampler': module25,
+  'saturator': module26,
+  'sequencer': module27,
+  'shift-register': module28,
+  'slope': module29,
+  'stereo-mixer': module30,
+  'switch': module31,
+  'tape-delay': module32,
+  'vca': module33,
 };

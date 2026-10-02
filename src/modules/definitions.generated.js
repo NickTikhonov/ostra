@@ -13,24 +13,26 @@ import { definition as module10 } from './distortion/definition.js';
 import { definition as module11 } from './divider/definition.js';
 import { definition as module12 } from './dual-envelope/definition.js';
 import { definition as module13 } from './envelope/definition.js';
-import { definition as module14 } from './filter/definition.js';
-import { definition as module15 } from './lfo/definition.js';
-import { definition as module16 } from './logic/definition.js';
-import { definition as module17 } from './maths/definition.js';
-import { definition as module18 } from './oscillator/definition.js';
-import { definition as module19 } from './output/definition.js';
-import { definition as module20 } from './quantiser/definition.js';
-import { definition as module21 } from './random/definition.js';
-import { definition as module22 } from './reverb/definition.js';
-import { definition as module23 } from './sampler/definition.js';
-import { definition as module24 } from './saturator/definition.js';
-import { definition as module25 } from './sequencer/definition.js';
-import { definition as module26 } from './shift-register/definition.js';
-import { definition as module27 } from './slope/definition.js';
-import { definition as module28 } from './stereo-mixer/definition.js';
-import { definition as module29 } from './switch/definition.js';
-import { definition as module30 } from './tape-delay/definition.js';
-import { definition as module31 } from './vca/definition.js';
+import { definition as module14 } from './euclidean/definition.js';
+import { definition as module15 } from './filter/definition.js';
+import { definition as module16 } from './lfo/definition.js';
+import { definition as module17 } from './logic/definition.js';
+import { definition as module18 } from './maths/definition.js';
+import { definition as module19 } from './oscillator/definition.js';
+import { definition as module20 } from './output/definition.js';
+import { definition as module21 } from './percussion/definition.js';
+import { definition as module22 } from './quantiser/definition.js';
+import { definition as module23 } from './random/definition.js';
+import { definition as module24 } from './reverb/definition.js';
+import { definition as module25 } from './sampler/definition.js';
+import { definition as module26 } from './saturator/definition.js';
+import { definition as module27 } from './sequencer/definition.js';
+import { definition as module28 } from './shift-register/definition.js';
+import { definition as module29 } from './slope/definition.js';
+import { definition as module30 } from './stereo-mixer/definition.js';
+import { definition as module31 } from './switch/definition.js';
+import { definition as module32 } from './tape-delay/definition.js';
+import { definition as module33 } from './vca/definition.js';
 export const DEFINITIONS = {
   'a110': module0,
   'a124': module1,
@@ -46,22 +48,24 @@ export const DEFINITIONS = {
   'divider': module11,
   'dual-envelope': module12,
   'envelope': module13,
-  'filter': module14,
-  'lfo': module15,
-  'logic': module16,
-  'maths': module17,
-  'oscillator': module18,
-  'output': module19,
-  'quantiser': module20,
-  'random': module21,
-  'reverb': module22,
-  'sampler': module23,
-  'saturator': module24,
-  'sequencer': module25,
-  'shift-register': module26,
-  'slope': module27,
-  'stereo-mixer': module28,
-  'switch': module29,
-  'tape-delay': module30,
-  'vca': module31,
+  'euclidean': module14,
+  'filter': module15,
+  'lfo': module16,
+  'logic': module17,
+  'maths': module18,
+  'oscillator': module19,
+  'output': module20,
+  'percussion': module21,
+  'quantiser': module22,
+  'random': module23,
+  'reverb': module24,
+  'sampler': module25,
+  'saturator': module26,
+  'sequencer': module27,
+  'shift-register': module28,
+  'slope': module29,
+  'stereo-mixer': module30,
+  'switch': module31,
+  'tape-delay': module32,
+  'vca': module33,
 };

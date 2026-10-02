@@ -1,0 +1,111 @@
+.meter {
+  position: absolute;
+  left: 16px;
+  top: 55px;
+  width: 200px;
+  height: 91px;
+  box-sizing: border-box;
+  padding: 5px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #33332c;
+  border: 1px solid #252b25;
+  box-shadow:
+    0 3px 4px #4d321840,
+    inset 0 1px 1px #ffffe34d;
+}
+.meter svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 5px;
+  background: radial-gradient(ellipse at 50% 5%, #fff5c9, #dbc794);
+  box-shadow: inset 0 2px 5px #30291f66;
+}
+.meter line {
+  stroke: #483c2b;
+  stroke-width: 1;
+}
+.meter text {
+  fill: #483c2b;
+  font: 7px var(--mono);
+}
+.arc {
+  fill: none;
+  stroke: #61523a;
+  stroke-width: 1;
+}
+.redArc {
+  fill: none;
+  stroke: #a4432c;
+  stroke-width: 3;
+}
+.red line {
+  stroke: #a4432c;
+}
+.red text {
+  fill: #a4432c;
+}
+.meter .legend {
+  font: 6px var(--mono);
+  letter-spacing: 0.7px;
+}
+.needle {
+  transform-origin: 100px 98px;
+  transition: transform 80ms linear;
+}
+.needle line {
+  stroke: #402819;
+  stroke-width: 1.5;
+  filter: drop-shadow(1px 1px 1px #382b3255);
+}
+.hub {
+  fill: #403b30;
+}
+.scorch {
+  position: absolute;
+  left: 76px;
+  top: 238px;
+  width: 80px;
+}
+.scorch button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 24px;
+  border-radius: 5px;
+  border: 1px solid #92503370;
+  background: #efcf94;
+  box-shadow:
+    inset 0 1px #fff7,
+    0 2px 2px #59332044;
+  color: #67391e;
+  font: 8px var(--mono);
+  letter-spacing: 0.7px;
+  cursor: pointer;
+}
+.scorch i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #875b4544;
+}
+.scorch button[aria-pressed='true'] {
+  background: #93402a;
+  color: #ffedbc;
+}
+.scorch button[aria-pressed='true'] i {
+  background: #ffcd70;
+  box-shadow: 0 0 5px #ffb049;
+}
+.scorch button:focus-visible {
+  outline: 2px solid #783e22;
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .needle {
+    transition: none;
+  }
+}
