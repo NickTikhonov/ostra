@@ -195,3 +195,45 @@ test('new module controls and sample references persist without putting audio by
   assert.deepEqual(restoreRack(storage).patch, patch);
   assert.ok(storage.getItem(STORAGE_KEY).length < 5000);
 });
+
+test('dual voice upgrades retain existing channels and restore all added controls and cables', () => {
+  const patch = starterPatch(),
+    storage = memory();
+  const vca = patch.modules.find((m) => m.type === 'vca');
+  const env = patch.modules.find((m) => m.type === 'envelope');
+  vca.version = 1;
+  vca.params = { gain: 0.3, depth: 0.7, curve: 0.8 };
+  env.version = 1;
+  const originalCables = structuredClone(patch.cables);
+  const migrated = validatePatch(patch);
+  assert.deepEqual(migrated.cables, originalCables);
+  const dual = migrated.modules.find((m) => m.id === vca.id);
+  assert.equal(dual.params.gain, 0.3);
+  assert.equal(dual.params.depth, 0.7);
+  assert.equal(dual.params.curve, 0.8);
+  assert.equal(dual.params.gain2, 0);
+  assert.equal(dual.params.depth2, 1);
+  const ad = createModule('dual-envelope', 42, 902);
+  ad.params.attack2 = 0.37;
+  migrated.modules.push(ad);
+  migrated.cables.push(
+    {
+      id: 'second-env',
+      from: ad.id,
+      fromPort: 'env2',
+      to: vca.id,
+      toPort: 'cv2',
+      color: '#e68554',
+    },
+    {
+      id: 'attack-cv',
+      from: ad.id,
+      fromPort: 'env1',
+      to: env.id,
+      toPort: 'attack',
+      color: '#83afa1',
+    },
+  );
+  saveRack(storage, migrated);
+  assert.deepEqual(restoreRack(storage).patch, migrated);
+});

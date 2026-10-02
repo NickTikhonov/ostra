@@ -1,16 +1,16 @@
 # FIELD modules
 
-FIELD is a family of twenty-two original digital modules. Knobs, switches, jack behaviour and panel materials are shared; each instrument owns its control layout, socket positions, printed signal flow and independent processor. There is no standard patch bay. No manufacturer artwork or logos are used in the current catalogue.
+FIELD is a family of twenty-three original digital modules. Knobs, switches, jack behaviour and panel materials are shared; each instrument owns its control layout, socket positions, printed signal flow and independent processor. There is no standard patch bay. No manufacturer artwork or logos are used in the current catalogue.
 
 ## Modules
 
 | Module                 | Behaviour                                                                                                                                                                                                                                                                   |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **VEIL · VCA**         | DC-coupled amplifier for audio or CV. BIAS sets the starting gain; CV adds gain through DEPTH. A 5V control signal opens it fully at the default depth. CURVE blends linear and exponential response.                                                                       |
-| **BLOOM · ENV**        | ADSR envelope from GATE, with a separate retrigger input. Outputs a 0–5V envelope, its negative counterpart, and a short pulse at the end of release.                                                                                                                       |
+| **VEIL · VCA / 2**     | Two independent DC-coupled amplifiers for audio or CV. Each channel has its own BIAS, CV depth and CURVE. BIAS sets the starting gain; CV adds gain through DEPTH. A 5V control signal opens it fully at the default depth. CURVE blends linear and exponential response.   |
+| **BLOOM · ENV**        | Voltage-controlled ADSR envelope from GATE, with a separate retrigger input and individual A/D/S/R CV jacks. Outputs a 0–5V envelope, its negative counterpart, and a short pulse at the end of release.                                                                    |
 | **DRIFT · LFO**        | Simultaneous sine, triangle, and square outputs. RATE, DEPTH, bipolar/unipolar selection, exponential rate CV, and phase reset. Bipolar square is also usable as a clock.                                                                                                   |
 | **BRAID · CV MIXER**   | Three two-input attenuverting mixers, each with A/B gain from −1 to +1. Unpatched inputs supply +5V for offsets. Two switches cascade mixes into the next output. DC-coupled for CV and audio, with bipolar output indicators.                                              |
-| **PATH · VOLTAGE / 8** | Eight continuous voltage stages with configurable range, 1–8-stage length, five playback orders, glide, and direct STAGE CV selection. Independent gate probabilities/lengths, rests, skips, and lockable randomisation/mutation.                                           |
+| **PATH · VOLTAGE / 8** | Eight continuous voltage stages with a default −10…+10V editing range, 1–8-stage length, five playback orders, glide, and direct STAGE CV selection. Independent gate probabilities/lengths, rests, skips, and lockable randomisation/mutation.                             |
 | **ORBIT · VCO**        | Simultaneous sine, triangle, saw, and pulse. 1V/oct pitch, coarse/fine tune, exponential FM, pulse width/PWM, and hard sync. Saw and pulse use band-limited edge corrections.                                                                                               |
 | **SIEVE · VCF**        | State-variable filter with simultaneous lowpass, bandpass, and highpass outputs. Cutoff, resonance, and signed cutoff-CV depth. LEVEL CV retains the earlier filter's lowpass-output amplitude control for save compatibility.                                              |
 | **ECHO · DELAY**       | Fractional delay with filtered, bounded feedback. TIME CV changes the delay exponentially. Patching CLOCK uses the measured pulse interval and the selected ratio. MIX blends dry/wet; WET is available separately. Delay time is limited to four seconds.                  |
@@ -28,6 +28,7 @@ FIELD is a family of twenty-two original digital modules. Knobs, switches, jack 
 | **RELAY · CV DELAY / 4** | Clocked voltage memory, NOW and simultaneous 1–4-clock delay taps, selectable output, hold and reset. |
 | **LOGIC · GATES + COMPARE** | AND, OR, XOR and NOT gates alongside an independent voltage comparator with threshold CV and hysteresis. |
 | **HARBOUR · STEREO MIX / SEND** | Three mono/stereo channels with pan/balance and sends, a stereo return and main stereo outputs. |
+| **SPROUT · DUAL AD ENV** | Two independent trigger-driven attack/decay envelopes, each with attack/decay knobs, manual trigger, 0–5V envelope and a 10ms end pulse. Gates do not sustain; a rising edge runs one full cycle. |
 | **GRAIN · SAMPLER** | Local WAV/MP3 playback with one-shot, loop and granular modes, reverse, position/length, tune and grain controls. Assets persist in this browser's IndexedDB. |
 
 Signal kinds are hints: audio, CV, and gates all carry sample-rate voltages and may be patched into one another. Oscillator audio is nominally ±5V. Pitch uses 1V/oct, with 0V at C4 before oscillator tuning. Inputs accept one source; outputs can feed multiple destinations. Feedback edges have a one-sample delay, and the master output is limited.
@@ -130,8 +131,8 @@ The 15 catalogue panels and the SLOPE compatibility panel now use compact titles
 
 | Module | Layout                                                                                                                                    |
 | ------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| VEIL   | Amplifier triangle, large bias control, CV input beside depth, curve and a separate output.                                               |
-| BLOOM  | Gate/retrigger at the top, ADSR controls around a printed envelope, complementary outputs below.                                          |
+| VEIL   | Two stacked amplifier channels, each with bias/depth/curve controls above its input, CV and output jacks.                                 |
+| BLOOM  | Four ADSR controls down the left with their CV inputs beside them; gate, retrigger and outputs down the right.                            |
 | DRIFT  | Large rate control, rate CV and reset beside the modulation section, waveforms down the right edge.                                       |
 | BRAID  | Three horizontal A/B mixer strips with outputs and cascade switches at the right.                                                         |
 | PATH   | Stage editing on the left, playback on the right; CV/gate below the sequence and timing inputs below playback.                            |
@@ -188,3 +189,11 @@ Add **REVERB · HALO** from the canvas picker. Patch a voice or effect into **L/
 The processor is an original eight-line feedback delay network with energy-preserving Hadamard mixing, input diffusion, sample-rate-scaled delays, wet-send DC filtering and bounded feedback. It performs no allocations in its sample loop. Control changes are smoothed. The freeze topology follows the general lossless-network principle described in [On Lossless Feedback Delay Networks](https://arxiv.org/abs/1606.07729); stereo normalisation, adjacent CV controls and a direct freeze gate/button were also studied in the [Desmodus Versio manual](https://noiseengineering.us/manuals/desmodus-versio/). HALO is not an emulation of that module.
 
 Knobs, freeze state, position and cables save with the rack. The audio tail is runtime state and starts empty after refresh; a saved frozen module needs to be released before it can capture new sound. Adding HALO does not replace a saved rack or change the first-visit patch. Silent numerical checks cover decay, stereo separation, pre-delay, damping, CV, freeze, extreme settings and 44.1/96kHz operation; browser checks cover layout and stereo patching. No audio was played or auditioned.
+
+## Compact voice modules
+
+- **GRAIN** now occupies 400px rather than 560px (29% narrower). Its sample drop area, waveform, six controls and stereo outputs remain on the faceplate; saved sample references and playback settings are unchanged.
+- **PATH** opens new instances with the full −10…+10V slider range. Existing saved editing ranges and literal step voltages are retained. Range changes never rescale a sequence.
+- **BLOOM** accepts individual attack, decay, sustain and release CV. The knobs set the base values. +1V doubles a time, −1V halves it, bounded to the respective knob limits. Sustain CV adds 20 percentage points per volt and clamps to 0–100%. Unpatched CV inputs preserve the original ADSR behaviour.
+- **VEIL** has independent A/B amplifiers for audio or CV. Each channel has BIAS, CV depth and a linear/exponential CURVE blend; +5V fully opens a channel at the default CV depth. No signals are normalled or mixed between channels. Existing VEIL settings and cables become channel A unchanged; channel B starts closed.
+- **SPROUT** is a simpler pair of AD envelopes. A rising trigger or the channel's TRIG button starts an attack to +5V, then a decay to zero even if the input remains high. Retriggering starts a new attack from the current voltage. Attack spans 1ms–8s, decay 3ms–15s; each END output gives a 10ms pulse when decay finishes. Both channels have independent timing and activity lights.

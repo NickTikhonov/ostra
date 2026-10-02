@@ -27,8 +27,8 @@ export function createData() {
     slides: Array(8).fill(true),
     probabilities: Array(8).fill(1),
     gateLengths: Array(8).fill(0.45),
-    rangeMin: 0,
-    rangeMax: 5,
+    rangeMin: -10,
+    rangeMax: 10,
     addressMode: 0,
     mutation: 0.1,
     legacyClockGate: false,
@@ -57,8 +57,8 @@ export function restoreData(saved) {
       const array = data[key];
       return number(Array.isArray(array) ? array[i] : undefined, fallback, lo, hi);
     });
-  const rangeMin = legacy ? -1 : number(data.rangeMin, 0, -10, 9.99);
-  const rangeMax = legacy ? 2 : number(data.rangeMax, 5, rangeMin + 0.01, 10);
+  const rangeMin = legacy ? -1 : number(data.rangeMin, -10, -10, 9.99);
+  const rangeMax = legacy ? 2 : number(data.rangeMax, 10, rangeMin + 0.01, 10);
   return {
     steps: legacy
       ? values('steps', 0, -12, 24).map((n) => Math.round(n) / 12)

@@ -12,7 +12,7 @@ Patch a melody. Make it wander. Build the instrument you wish existed.
 
 ![ostra: a colourful modular rack with sequencers, oscillators, modulation and effects connected by patch cables](docs/images/ostra-rack.png)
 
-ostra is a local-first modular synthesizer with **21 instruments and utilities plus a fixed stereo master**, tactile controls and an open canvas. Connect audio, control voltages and gates to make anything from a single voice to a self-playing patch. Everything runs on your machine—no accounts, API keys or audio backend.
+ostra is a local-first modular synthesizer with **22 instruments and utilities plus a fixed stereo master**, tactile controls and an open canvas. Connect audio, control voltages and gates to make anything from a single voice to a self-playing patch. Everything runs on your machine—no accounts, API keys or audio backend.
 
 > **Experimental alpha.** Ready to explore and contribute to; expect the occasional rough edge.
 
@@ -56,12 +56,14 @@ The [rack guide](docs/rack-guide.md) covers patching, persistence, samples and r
 
 | Make sound                          | Move it                                | Shape it                     | Connect it                               |
 | ----------------------------------- | -------------------------------------- | ---------------------------- | ---------------------------------------- |
-| **ORBIT** — VCO                     | **PATH** — 8-stage voltage sequencer   | **SIEVE** — filter           | **VEIL** — VCA                           |
+| **ORBIT** — VCO                     | **PATH** — 8-stage voltage sequencer   | **SIEVE** — filter           | **VEIL** — dual VCA                      |
 | **GRAIN** — sampler / granular      | **PRISM** — four-channel quantiser     | **GRIT** — distortion        | **BRAID** — CV mixer / attenuverter      |
-| **CHANCE** — random / sample & hold | **BLOOM** — ADSR envelope              | **ECHO** — delay             | **HARBOUR** — stereo mixer / sends       |
+| **CHANCE** — random / sample & hold | **BLOOM** — voltage-controlled ADSR    | **ECHO** — delay             | **HARBOUR** — stereo mixer / sends       |
 |                                     | **DRIFT** — LFO                        | **SPOOL** — tape-style delay | **JUNCTION** — voltage-controlled switch |
 |                                     | **VECTOR** — dual function generator   | **HALO** — reverb / freeze   | **RELAY** — clocked CV delay             |
 |                                     | **TICK** — clock · **SPLIT** — divider |                              | **LOGIC** — gates / comparator           |
+
+**SPROUT** adds two independent attack/decay envelopes, with trigger buttons and end-of-cycle outputs.
 
 All jacks carry sample-rate voltages: the audio/CV labels are guides, not restrictions. Nine archived module types also remain available to existing saved racks. [Read the module guide →](docs/studio-modules.md)
 

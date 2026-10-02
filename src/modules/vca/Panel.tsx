@@ -4,15 +4,22 @@ export default function Panel() {
   return (
     <>
       <PanelArtwork>
-        <path d="M32 104V143H49M50 80L148 126L50 172ZM98 172V190M51 231H148M148 250V302" />
-        <path className="faint" d="M32 269V320H125" />
+        <rect className="wash" x="12" y="52" width="160" height="151" rx="10" />
+        <rect className="wash" x="12" y="208" width="160" height="151" rx="10" />
+        <path d="M54 173H72M111 173H128M54 329H72M111 329H128" />
       </PanelArtwork>
-      <Dial id="gain" x={99} y={122} large />
-      <Dial id="depth" x={83} y={231} />
-      <Dial id="curve" x={148} y={231} />
-      <Legend x={70} y={314}>
-        AMPLITUDE →
+      <Legend x={92} y={64}>
+        CHANNEL A
       </Legend>
+      <Dial id="gain" x={36} y={103} />
+      <Dial id="depth" x={92} y={103} />
+      <Dial id="curve" x={148} y={103} />
+      <Legend x={92} y={220}>
+        CHANNEL B
+      </Legend>
+      <Dial id="gain2" x={36} y={259} />
+      <Dial id="depth2" x={92} y={259} />
+      <Dial id="curve2" x={148} y={259} />
     </>
   );
 }

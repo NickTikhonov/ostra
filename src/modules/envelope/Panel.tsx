@@ -1,20 +1,19 @@
 import { Dial } from '@/components/controls/Studio';
-import { PanelArtwork, Legend } from '@/components/controls/PanelArtwork';
+import { PanelArtwork } from '@/components/controls/PanelArtwork';
 export default function Panel() {
   return (
     <>
       <PanelArtwork>
-        <rect className="wash" x="18" y="121" width="196" height="176" rx="12" />
-        <path d="M29 209H61L89 145L116 202H146L195 275H205" />
-        <path d="M34 103V112H91V103M116 297V309H152M88 309H116" />
+        <rect className="wash" x="18" y="54" width="133" height="306" rx="12" />
+        <path d="M164 57V356" />
+        {[88, 167, 246, 325].map((y) => (
+          <path key={y} d={`M79 ${y}H103`} />
+        ))}
       </PanelArtwork>
-      <Dial id="attack" x={48} y={159} />
-      <Dial id="decay" x={183} y={159} />
-      <Dial id="sustain" x={48} y={254} />
-      <Dial id="release" x={183} y={254} />
-      <Legend x={116} y={235}>
-        A · D · S · R
-      </Legend>
+      <Dial id="attack" x={52} y={88} />
+      <Dial id="decay" x={52} y={167} />
+      <Dial id="sustain" x={52} y={246} />
+      <Dial id="release" x={52} y={325} />
     </>
   );
 }

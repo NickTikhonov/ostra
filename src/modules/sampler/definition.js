@@ -12,7 +12,7 @@ export const definition = {
   order: 4.5,
   color: '#744971',
   panel: '#d2b5cc',
-  width: 560,
+  width: 400,
   layout: 'studio',
   headerLayout: 'compact',
   portStyle: 'badge',
@@ -54,7 +54,7 @@ export const definition = {
     {
       id: 'left',
       label: 'LEFT',
-      x: 520,
+      x: 360,
       y: 150,
       kind: 'audio',
       labelPosition: 'below',
@@ -62,7 +62,7 @@ export const definition = {
     {
       id: 'right',
       label: 'RIGHT',
-      x: 520,
+      x: 360,
       y: 212,
       kind: 'audio',
       labelPosition: 'below',
@@ -70,8 +70,8 @@ export const definition = {
     {
       id: 'end',
       label: 'END',
-      x: 520,
-      y: 332,
+      x: 360,
+      y: 274,
       kind: 'gate',
       labelPosition: 'below',
     },

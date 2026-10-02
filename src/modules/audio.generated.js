@@ -12,24 +12,25 @@ import module8 from './cv-mixer/processor.js';
 import module9 from './delay/processor.js';
 import module10 from './distortion/processor.js';
 import module11 from './divider/processor.js';
-import module12 from './envelope/processor.js';
-import module13 from './filter/processor.js';
-import module14 from './lfo/processor.js';
-import module15 from './logic/processor.js';
-import module16 from './maths/processor.js';
-import module17 from './oscillator/processor.js';
-import module18 from './output/processor.js';
-import module19 from './quantiser/processor.js';
-import module20 from './random/processor.js';
-import module21 from './reverb/processor.js';
-import module22 from './sampler/processor.js';
-import module23 from './sequencer/processor.js';
-import module24 from './shift-register/processor.js';
-import module25 from './slope/processor.js';
-import module26 from './stereo-mixer/processor.js';
-import module27 from './switch/processor.js';
-import module28 from './tape-delay/processor.js';
-import module29 from './vca/processor.js';
+import module12 from './dual-envelope/processor.js';
+import module13 from './envelope/processor.js';
+import module14 from './filter/processor.js';
+import module15 from './lfo/processor.js';
+import module16 from './logic/processor.js';
+import module17 from './maths/processor.js';
+import module18 from './oscillator/processor.js';
+import module19 from './output/processor.js';
+import module20 from './quantiser/processor.js';
+import module21 from './random/processor.js';
+import module22 from './reverb/processor.js';
+import module23 from './sampler/processor.js';
+import module24 from './sequencer/processor.js';
+import module25 from './shift-register/processor.js';
+import module26 from './slope/processor.js';
+import module27 from './stereo-mixer/processor.js';
+import module28 from './switch/processor.js';
+import module29 from './tape-delay/processor.js';
+import module30 from './vca/processor.js';
 export const AUDIO_MODULES = {
   'a110': { definition: DEFINITIONS['a110'], processor: module0 },
   'a124': { definition: DEFINITIONS['a124'], processor: module1 },
@@ -43,22 +44,23 @@ export const AUDIO_MODULES = {
   'delay': { definition: DEFINITIONS['delay'], processor: module9 },
   'distortion': { definition: DEFINITIONS['distortion'], processor: module10 },
   'divider': { definition: DEFINITIONS['divider'], processor: module11 },
-  'envelope': { definition: DEFINITIONS['envelope'], processor: module12 },
-  'filter': { definition: DEFINITIONS['filter'], processor: module13 },
-  'lfo': { definition: DEFINITIONS['lfo'], processor: module14 },
-  'logic': { definition: DEFINITIONS['logic'], processor: module15 },
-  'maths': { definition: DEFINITIONS['maths'], processor: module16 },
-  'oscillator': { definition: DEFINITIONS['oscillator'], processor: module17 },
-  'output': { definition: DEFINITIONS['output'], processor: module18 },
-  'quantiser': { definition: DEFINITIONS['quantiser'], processor: module19 },
-  'random': { definition: DEFINITIONS['random'], processor: module20 },
-  'reverb': { definition: DEFINITIONS['reverb'], processor: module21 },
-  'sampler': { definition: DEFINITIONS['sampler'], processor: module22 },
-  'sequencer': { definition: DEFINITIONS['sequencer'], processor: module23 },
-  'shift-register': { definition: DEFINITIONS['shift-register'], processor: module24 },
-  'slope': { definition: DEFINITIONS['slope'], processor: module25 },
-  'stereo-mixer': { definition: DEFINITIONS['stereo-mixer'], processor: module26 },
-  'switch': { definition: DEFINITIONS['switch'], processor: module27 },
-  'tape-delay': { definition: DEFINITIONS['tape-delay'], processor: module28 },
-  'vca': { definition: DEFINITIONS['vca'], processor: module29 },
+  'dual-envelope': { definition: DEFINITIONS['dual-envelope'], processor: module12 },
+  'envelope': { definition: DEFINITIONS['envelope'], processor: module13 },
+  'filter': { definition: DEFINITIONS['filter'], processor: module14 },
+  'lfo': { definition: DEFINITIONS['lfo'], processor: module15 },
+  'logic': { definition: DEFINITIONS['logic'], processor: module16 },
+  'maths': { definition: DEFINITIONS['maths'], processor: module17 },
+  'oscillator': { definition: DEFINITIONS['oscillator'], processor: module18 },
+  'output': { definition: DEFINITIONS['output'], processor: module19 },
+  'quantiser': { definition: DEFINITIONS['quantiser'], processor: module20 },
+  'random': { definition: DEFINITIONS['random'], processor: module21 },
+  'reverb': { definition: DEFINITIONS['reverb'], processor: module22 },
+  'sampler': { definition: DEFINITIONS['sampler'], processor: module23 },
+  'sequencer': { definition: DEFINITIONS['sequencer'], processor: module24 },
+  'shift-register': { definition: DEFINITIONS['shift-register'], processor: module25 },
+  'slope': { definition: DEFINITIONS['slope'], processor: module26 },
+  'stereo-mixer': { definition: DEFINITIONS['stereo-mixer'], processor: module27 },
+  'switch': { definition: DEFINITIONS['switch'], processor: module28 },
+  'tape-delay': { definition: DEFINITIONS['tape-delay'], processor: module29 },
+  'vca': { definition: DEFINITIONS['vca'], processor: module30 },
 };

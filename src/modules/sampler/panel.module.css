@@ -25,7 +25,7 @@
 .file {
   display: block;
   font: 600 10px var(--mono);
-  max-width: 290px;
+  max-width: 208px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -33,14 +33,14 @@
 .status {
   display: block;
   font: 8px/1.4 var(--mono);
-  max-width: 285px;
+  max-width: 208px;
   margin-top: 6px;
 }
 .drop svg {
   position: absolute;
   right: 12px;
   top: 12px;
-  width: 178px;
+  width: 112px;
   height: 40px;
   stroke: #74497188;
   stroke-width: 1.3;

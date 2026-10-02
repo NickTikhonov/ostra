@@ -70,8 +70,8 @@ export default function Panel() {
   return (
     <>
       <PanelArtwork>
-        <rect className="wash" x="89" y="127" width="371" height="181" rx="16" />
-        <path d="M88 220H461M476 131V298M62 270H80" />
+        <rect className="wash" x="78" y="127" width="244" height="181" rx="16" />
+        <path d="M78 220H322M338 131V299M62 270H78" />
       </PanelArtwork>
       <button
         className={styles.drop}
@@ -127,16 +127,16 @@ export default function Panel() {
           if (file) void load(file);
         }}
       />
-      <Dial id="position" x={145} y={166} />
-      <Dial id="length" x={270} y={166} />
-      <Dial id="tune" x={395} y={166} />
-      <Dial id="grain" x={145} y={267} />
-      <Dial id="density" x={270} y={267} />
-      <Dial id="spray" x={395} y={267} />
-      <Choice id="mode" options={['ONE-SHOT', 'LOOP', 'GRANULAR']} x={145} y={339} />
-      <Choice id="reverse" options={['FORWARD', 'REVERSE']} x={300} y={339} />
-      <Action event="trigger" label="TRIGGER" x={428} y={344} />
-      <Light on={running && display.playing === true} x={473} y={345} />
+      <Dial id="position" x={108} y={166} />
+      <Dial id="length" x={200} y={166} />
+      <Dial id="tune" x={292} y={166} />
+      <Dial id="grain" x={108} y={267} />
+      <Dial id="density" x={200} y={267} />
+      <Dial id="spray" x={292} y={267} />
+      <Choice id="mode" options={['ONE-SHOT', 'LOOP', 'GRANULAR']} x={108} y={339} />
+      <Choice id="reverse" options={['FORWARD', 'REVERSE']} x={220} y={339} />
+      <Action event="trigger" label="TRIGGER" x={320} y={344} />
+      <Light on={running && display.playing === true} x={366} y={345} />
     </>
   );
 }
