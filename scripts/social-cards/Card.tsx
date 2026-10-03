@@ -31,44 +31,7 @@ export default function Card({ learn = false }: { learn?: boolean }) {
   const connections = learn ? cables.slice(0, 1) : cables;
   return (
     <main className={`${styles.card} ${learn ? styles.learn : styles.home}`}>
-      <div className={styles.brand}>
-        ostra<span>{learn ? '/ learn' : ''}</span>
-      </div>
-      <div className={styles.copy}>
-        <div className={styles.eyebrow}>
-          {learn ? 'AN INTERACTIVE TUTORIAL' : 'SOUND STARTS WITH A CONNECTION'}
-        </div>
-        <h1>
-          {learn ? (
-            <>
-              Program your
-              <br />
-              first <em>synth.</em>
-            </>
-          ) : (
-            <>
-              A modular
-              <br />
-              <em>playground.</em>
-            </>
-          )}
-        </h1>
-        <p>
-          {learn ? (
-            <>
-              Learn modular synthesis,
-              <br />
-              one connection at a time.
-            </>
-          ) : (
-            <>
-              Build your own musical instrument.
-              <br />
-              Right in your browser.
-            </>
-          )}
-        </p>
-      </div>
+      <div className={styles.brand}>ostra</div>
       <div className={styles.instrument}>
         <div className={styles.rail} />
         {types.map((type, index) => {
@@ -134,10 +97,6 @@ export default function Card({ learn = false }: { learn?: boolean }) {
             );
           })}
         </svg>
-      </div>
-      <div className={styles.address}>
-        ostra.fm{learn ? '/learn' : ''}
-        <span>↗</span>
       </div>
     </main>
   );

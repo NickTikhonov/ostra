@@ -5,10 +5,10 @@ import { socialMetadata } from '@/lib/social-metadata';
 export const metadata: Metadata = socialMetadata({
   title: 'Learn modular synthesis — ostra',
   description:
-    'Learn how to program a modular synthesiser in your browser. An interactive tutorial, one connection at a time.',
+    'Learn how to program a modular synthesiser in your browser with an interactive, hands-on tutorial.',
   path: '/learn',
   image: 'learn',
-  alt: 'ostra / learn — Program your first synth. An oscillator patched into a filter on a warm cream background.',
+  alt: 'The Ostra logo above colourful synthesiser modules, with an oscillator patched into a filter on a warm cream background.',
 });
 
 export default function LearnPage() {
