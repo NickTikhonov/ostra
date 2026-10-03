@@ -8,6 +8,12 @@ import {
 } from '@/lib/modules';
 import type { PendingCable } from '@/lib/patching';
 import type { ProbeAnchor } from '@/lib/scope';
+import {
+  cableCurve as curve,
+  cableSlack,
+  CABLE_SETTLE_MS,
+  HELD_CABLE_SLACK,
+} from '@/lib/cable-motion';
 
 type Point = { x: number; y: number };
 export function portPoint(m: RackModule, port: string, direction: 'in' | 'out'): Point {
@@ -16,11 +22,6 @@ export function portPoint(m: RackModule, port: string, direction: 'in' | 'out'):
   )!;
   return { x: m.x + socket.x, y: m.y + socket.y };
 }
-function curve(a: Point, b: Point) {
-  const sag = 42 + Math.min(115, Math.abs(a.x - b.x) * 0.17);
-  return `M${a.x},${a.y} C${a.x},${a.y + sag} ${b.x},${b.y + sag} ${b.x},${b.y}`;
-}
-
 type Props = {
   screen?: boolean;
   patch: Patch;
@@ -54,6 +55,8 @@ export function CableLayer({
 }: Props) {
   const id = useId().replace(/:/g, '');
   const svg = useRef<SVGSVGElement>(null);
+  const previousConnections = useRef<Map<string, string> | null>(null);
+  const settling = useRef(new Map<string, number>());
   const modules = useMemo(() => patchModules(patch), [patch]);
   const cables = patch.cables.filter(
     (c) => c.id !== wire?.cableId && (c.to === patch.output?.id) === screen,
@@ -66,15 +69,77 @@ export function CableLayer({
     .join(' ');
 
   useLayoutEffect(() => {
-    if (!screen) return;
     const layer = svg.current,
       scroller = viewport.current,
       canvas = surface.current,
       master = output.current;
     if (!layer || !scroller || !canvas || !master) return;
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+    const now = performance.now();
+    const connections = new Map(
+      patch.cables.map((c) => [c.id, JSON.stringify([c.from, c.fromPort, c.to, c.toPort])]),
+    );
+    // Track both layers so repatching between a module and the master animates
+    // too. Loading a saved rack starts settled; knob/zoom changes never restart it.
+    for (const [key, connection] of connections) {
+      if (
+        previousConnections.current &&
+        previousConnections.current.get(key) !== connection &&
+        !reducedMotion.matches
+      )
+        settling.current.set(key, now);
+    }
+    previousConnections.current = connections;
+    for (const key of settling.current.keys()) {
+      if (!connections.has(key) || key === wire?.cableId || reducedMotion.matches)
+        settling.current.delete(key);
+    }
+    let frame = 0;
+    let drawings: { id: string; paths: SVGPathElement[]; start: Point; end: Point }[] = [];
+    const paint = (time: number, geometryChanged = false) => {
+      let moving = false;
+      for (const drawing of drawings) {
+        const started = settling.current.get(drawing.id);
+        if (started === undefined && !geometryChanged) continue;
+        const elapsed = started === undefined ? CABLE_SETTLE_MS : time - started;
+        const path = curve(drawing.start, drawing.end, cableSlack(elapsed));
+        for (const element of drawing.paths) element.setAttribute('d', path);
+        if (elapsed < CABLE_SETTLE_MS) moving = true;
+        else settling.current.delete(drawing.id);
+      }
+      return moving;
+    };
+    const animate = (time: number) => {
+      frame = 0;
+      if (paint(time)) frame = requestAnimationFrame(animate);
+    };
+    const redraw = () => {
+      if (paint(performance.now(), true) && !frame) frame = requestAnimationFrame(animate);
+    };
     // Scroll geometry never goes through React state. Update the small
     // fixed-output overlay directly in the same event, without a second frame.
     const sync = () => {
+      if (!screen) {
+        drawings = Array.from(layer.querySelectorAll<SVGGElement>('[data-cable]')).flatMap(
+          (group) => {
+            const cable = patch.cables.find((c) => c.id === group.dataset.cable)!;
+            const a = modules.find((m) => m.id === cable.from),
+              b = modules.find((m) => m.id === cable.to);
+            return a && b
+              ? [
+                  {
+                    id: cable.id,
+                    paths: Array.from(group.querySelectorAll('path')),
+                    start: portPoint(a, cable.fromPort, 'out'),
+                    end: portPoint(b, cable.toPort, 'in'),
+                  },
+                ]
+              : [];
+          },
+        );
+        redraw();
+        return;
+      }
       const rect = canvas.getBoundingClientRect();
       const top = scroller.getBoundingClientRect().top;
       // Read both fixed anchors before any SVG writes to avoid layout thrashing.
@@ -110,6 +175,7 @@ export function CableLayer({
             })
             .join(' '),
       );
+      drawings = [];
       layer.querySelectorAll<SVGGElement>('[data-cable]').forEach((group) => {
         const cable = patch.cables.find((c) => c.id === group.dataset.cable)!;
         const a = modules.find((m) => m.id === cable.from),
@@ -117,7 +183,12 @@ export function CableLayer({
         if (!a || !b) return;
         const start = point(a, cable.fromPort, 'out'),
           end = point(b, cable.toPort, 'in');
-        group.querySelectorAll('path').forEach((path) => path.setAttribute('d', curve(start, end)));
+        drawings.push({
+          id: cable.id,
+          paths: Array.from(group.querySelectorAll('path')),
+          start,
+          end,
+        });
         group.querySelectorAll('[data-plug]').forEach((plug) => {
           const p = plug.getAttribute('data-plug') === '0' ? start : end;
           plug.setAttribute('transform', `translate(${p.x} ${p.y})`);
@@ -130,16 +201,33 @@ export function CableLayer({
             .querySelector('[data-pending]')
             ?.setAttribute(
               'd',
-              curve(point(m, wire.fixed.port, wire.fixed.direction), project(cursor)),
+              curve(
+                point(m, wire.fixed.port, wire.fixed.direction),
+                project(cursor),
+                HELD_CABLE_SLACK,
+              ),
             );
       }
+      redraw();
     };
     sync();
-    scroller.addEventListener('scroll', sync, { passive: true });
+    const motionChanged = () => {
+      if (!reducedMotion.matches) return;
+      settling.current.clear();
+      cancelAnimationFrame(frame);
+      frame = 0;
+      redraw();
+    };
+    reducedMotion.addEventListener('change', motionChanged);
+    if (screen) scroller.addEventListener('scroll', sync, { passive: true });
     const observer = new ResizeObserver(sync);
-    observer.observe(scroller);
-    observer.observe(master);
+    if (screen) {
+      observer.observe(scroller);
+      observer.observe(master);
+    }
     return () => {
+      cancelAnimationFrame(frame);
+      reducedMotion.removeEventListener('change', motionChanged);
       scroller.removeEventListener('scroll', sync);
       observer.disconnect();
     };
@@ -234,15 +322,7 @@ export function CableLayer({
           </g>
         );
       })}
-      {screen && wire && (
-        <path
-          data-pending
-          stroke={wire.color}
-          strokeWidth="4"
-          opacity=".75"
-          strokeDasharray="5 4"
-        />
-      )}
+      {screen && wire && <path data-pending stroke={wire.color} strokeWidth="4" opacity=".75" />}
     </svg>
   );
 }
