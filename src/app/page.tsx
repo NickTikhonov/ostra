@@ -8,7 +8,7 @@ export const metadata: Metadata = socialMetadata({
     'A modular synthesiser in your browser. Patch cables, explore colourful modules and build your own musical instrument.',
   path: '/',
   image: 'home',
-  alt: 'The Ostra logo above amber, green and coral synthesiser modules connected by patch cables on a dark green background.',
+  alt: 'The Ostra logo above a tilted, edge-to-edge row of colourful sequencer, oscillator, filter and function modules with dense patch cabling on a dark green background',
 });
 
 export default function Page() {

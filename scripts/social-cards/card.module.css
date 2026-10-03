@@ -34,19 +34,15 @@
 }
 .instrument {
   position: absolute;
-  left: 195px;
-  top: 190px;
-  width: 716px;
+  left: -160px;
+  top: 235px;
   height: 380px;
-  transform: rotate(-7deg) scale(1.24);
+  transform: rotate(-6deg) scale(1.08);
   transform-origin: 0 0;
   filter: drop-shadow(0 30px 22px #0005);
   pointer-events: none;
 }
 .learn .instrument {
-  left: 215px;
-  top: 150px;
-  transform: rotate(6deg) scale(1.16);
   filter: drop-shadow(0 24px 20px #483b352b);
 }
 .rail {

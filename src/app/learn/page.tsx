@@ -8,7 +8,7 @@ export const metadata: Metadata = socialMetadata({
     'Learn how to program a modular synthesiser in your browser with an interactive, hands-on tutorial.',
   path: '/learn',
   image: 'learn',
-  alt: 'The Ostra logo above colourful synthesiser modules, with an oscillator patched into a filter on a warm cream background.',
+  alt: 'The Ostra logo above a tilted, edge-to-edge row of colourful sequencer, oscillator, filter and function modules with dense patch cabling on a warm cream background',
 });
 
 export default function LearnPage() {
