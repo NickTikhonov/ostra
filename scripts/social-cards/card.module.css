@@ -1,0 +1,118 @@
+.card {
+  position: relative;
+  width: 1200px;
+  height: 630px;
+  overflow: hidden;
+  isolation: isolate;
+  font-family: 'DM Sans Variable', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.home {
+  color: #f5f0df;
+  background: radial-gradient(ellipse at 92% 35%, #3f5349 0, #263c34 42%, #1c3029 78%);
+}
+.learn {
+  color: #203c31;
+  background: radial-gradient(ellipse at 85% 40%, #e6ddc5, #f4f0e5 75%);
+}
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.12;
+  background-image: radial-gradient(currentColor 0.6px, transparent 0.6px);
+  background-size: 6px 6px;
+}
+.brand {
+  position: absolute;
+  top: 34px;
+  left: 56px;
+  font-size: 53px;
+  font-weight: 650;
+  letter-spacing: -3px;
+}
+.brand span {
+  margin-left: 17px;
+  font-size: 27px;
+  font-weight: 450;
+  letter-spacing: -1px;
+  opacity: 0.55;
+}
+.copy {
+  position: absolute;
+  left: 56px;
+  top: 170px;
+  z-index: 2;
+}
+.eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 1.8px;
+  opacity: 0.65;
+}
+.copy h1 {
+  margin: 22px 0 26px;
+  font-size: 83px;
+  font-weight: 550;
+  line-height: 1.03;
+  letter-spacing: -4.5px;
+}
+.copy em {
+  font-style: normal;
+  color: #efb287;
+}
+.copy p {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.4;
+  letter-spacing: -0.45px;
+  opacity: 0.76;
+}
+.learn .copy h1 {
+  font-size: 77px;
+}
+.learn .copy em {
+  color: #b45737;
+}
+.instrument {
+  position: absolute;
+  left: 670px;
+  top: 131px;
+  width: 750px;
+  height: 400px;
+  transform: rotate(-9deg) scale(1.17);
+  transform-origin: 0 0;
+  filter: drop-shadow(0 30px 22px #0005);
+  pointer-events: none;
+}
+.learn .instrument {
+  left: 685px;
+  top: 84px;
+  transform: rotate(7deg) scale(1.12);
+  filter: drop-shadow(0 24px 20px #483b352b);
+}
+.rail {
+  position: absolute;
+  inset: -14px -15px 4px;
+  border-radius: 8px;
+  background: #252c2b;
+  border: 5px solid #45504a;
+  box-shadow: inset 0 0 0 2px #121a16;
+}
+.address {
+  position: absolute;
+  bottom: 39px;
+  left: 56px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 19px;
+  font-weight: 500;
+  letter-spacing: -0.4px;
+}
+.address span {
+  opacity: 0.6;
+  font-size: 24px;
+}

@@ -6,6 +6,7 @@ import '@fontsource/ibm-plex-mono/500.css';
 import './globals.css';
 import './studio.css';
 export const metadata: Metadata = {
+  metadataBase: new URL('https://ostra.fm'),
   title: 'ostra — a modular playground',
   description:
     'A colourful modular synthesizer in your browser. Patch audio and CV, build generative instruments, and make your own modules.',
