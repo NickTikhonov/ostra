@@ -1040,7 +1040,7 @@ input {
   display: none;
 }
 .rack-app[data-intro] .canvas-viewport {
-  inset: 266px 0 0;
+  inset: 244px 0 0;
   overflow: hidden;
 }
 .rack-app[data-intro] .canvas {

@@ -419,3 +419,41 @@ test('simultaneous cleanup in two tabs never discards either live undo history',
     b.close();
   }
 });
+
+test('muted welcome startup stays silent and unmuting reuses the running patch', async () => {
+  const engine = new AudioEngine();
+  engine.setMuted(true);
+  await engine.start(empty(), true);
+  const context = engine.context,
+    node = engine.node;
+  assert.equal(context.level, 0);
+  assert.equal(context.resumed, true);
+  engine.setMuted(false);
+  assert.equal(context.level, 1);
+  engine.setMuted(true);
+  assert.equal(context.level, 0);
+  assert.equal(context.resumed, true, 'mute does not pause transport');
+  assert.equal(engine.node, node, 'mute does not recreate the instrument');
+  await engine.close();
+});
+
+test('blocked autoplay does not hold the welcome UI busy, and a gesture can resume it', async () => {
+  const originalResume = FakeContext.prototype.resume;
+  FakeContext.prototype.resume = function () {
+    return new Promise(() => {});
+  };
+  const engine = new AudioEngine();
+  try {
+    engine.setMuted(true);
+    await engine.start(empty(), true);
+    assert.equal(engine.context.level, 0);
+    assert.equal(engine.context.state, 'suspended');
+    FakeContext.prototype.resume = originalResume;
+    await engine.start(empty());
+    assert.equal(engine.context.state, 'running');
+    assert.equal(engine.context.level, 0, 'resuming by touching a knob remains silent');
+  } finally {
+    FakeContext.prototype.resume = originalResume;
+    await engine.close();
+  }
+});

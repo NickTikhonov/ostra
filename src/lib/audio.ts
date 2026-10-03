@@ -12,6 +12,7 @@ export class AudioEngine {
   onScope?: (frame: ScopeFrame) => void;
   onError?: (message: string) => void;
   onStopped?: () => void;
+  onRunning?: (running: boolean) => void;
   onRecordingProgress?: (seconds: number) => void;
   onRecordingComplete?: (wav: Blob, reason: string) => void;
   private recording: { chunks: ArrayBuffer[]; sampleRate: number } | null = null;
@@ -24,10 +25,22 @@ export class AudioEngine {
   private loadingAssets = new Map<string, Promise<void>>();
   private probeTarget: ProbeTarget | null = null;
 
-  async start(patch: Patch) {
+  private muted = false;
+  private initializing: Promise<void> | null = null;
+
+  setMuted(muted: boolean) {
+    this.muted = muted;
+    if (this.context)
+      this.gain?.gain.setTargetAtTime(muted ? 0 : 1, this.context.currentTime, 0.02);
+  }
+
+  private async initialize() {
     if (!this.context) {
       const ctx = new AudioContext({ latencyHint: 'interactive' });
       this.context = ctx;
+      ctx.onstatechange = () => {
+        if (this.context === ctx) this.onRunning?.(ctx.state === 'running');
+      };
       try {
         await ctx.audioWorklet.addModule('/runtime/audio/worklet.js');
         if (this.context !== ctx) throw new Error('Audio startup was cancelled.');
@@ -58,6 +71,20 @@ export class AudioEngine {
         throw error;
       }
     }
+  }
+
+  async start(patch: Patch, automatic = false) {
+    if (!this.initializing) this.initializing = this.initialize();
+    const initializing = this.initializing;
+    // Request resume during the gesture, before waiting for the worklet to load.
+    // Autoplay may leave this promise pending until the visitor interacts.
+    const resumed = this.context ? this.context.resume() : Promise.resolve();
+    void resumed.catch(() => {});
+    try {
+      await initializing;
+    } finally {
+      if (this.initializing === initializing) this.initializing = null;
+    }
     // Retry missing files on an explicit restart, not on every knob movement.
     this.failedAssets.clear();
     this.update(patch);
@@ -65,10 +92,11 @@ export class AudioEngine {
     const context = this.context;
     if (!context) throw new Error('Audio stopped during startup. Press Play to retry.');
     this.probe(this.probeTarget);
-    await context.resume();
+    if (!automatic) await resumed;
     if (this.context !== context)
       throw new Error('Audio stopped during startup. Press Play to retry.');
-    this.gain!.gain.setTargetAtTime(1, context.currentTime, 0.02);
+    this.setMuted(this.muted);
+    this.onRunning?.(context.state === 'running');
   }
 
   private fail(node: AudioWorkletNode, message: string) {
@@ -197,6 +225,8 @@ export class AudioEngine {
       node = this.node,
       gain = this.gain;
     this.context = null;
+    this.initializing = null;
+    if (context) context.onstatechange = null;
     this.node = null;
     this.gain = null;
     this.signature = '';

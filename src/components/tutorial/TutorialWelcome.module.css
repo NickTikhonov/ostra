@@ -5,7 +5,7 @@
   color: #eee9d7;
   background: linear-gradient(120deg, #233a34, #1b2e2a);
   padding: 18px 38px 0;
-  height: 266px;
+  height: 244px;
   box-sizing: border-box;
   box-shadow: 0 8px 30px #0005;
 }
@@ -35,12 +35,6 @@
   display: grid;
   grid-template-columns: 1.15fr 1fr;
   gap: 65px;
-}
-.eyebrow {
-  font: 8px var(--mono);
-  letter-spacing: 1.5px;
-  color: #b4c4a4;
-  margin: 0 0 9px;
 }
 .welcome h1 {
   font-size: clamp(28px, 3.1vw, 45px);
@@ -95,7 +89,7 @@
 }
 .actions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
 }
 .actions button {
@@ -103,53 +97,57 @@
   justify-content: center;
   align-items: center;
   gap: 9px;
-  min-height: 44px;
-  padding: 10px 16px;
+  height: 44px;
+  padding: 0 18px;
   font-size: 12px;
   border-radius: 6px;
   cursor: pointer;
+  transition:
+    background 120ms,
+    border-color 120ms,
+    box-shadow 120ms;
+}
+.actions button:focus-visible {
+  outline: 2px solid #eee2b4;
+  outline-offset: 4px;
 }
 .actions button:disabled {
   opacity: 0.5;
   cursor: wait;
 }
 .play {
+  min-width: 112px;
   color: #3a392a;
   background: linear-gradient(#eee2b4, #cbbd8d);
   border: 1px solid #f0eac7;
   box-shadow:
-    0 3px #8d835e,
+    0 2px #8d835e,
     inset 0 1px #fff9;
   font-weight: 700;
+}
+.play:hover:not(:disabled) {
+  border-color: #fff7db;
 }
 .play[aria-pressed='true'] {
   background: linear-gradient(#c0d09f, #a9bd8b);
   box-shadow:
     0 1px #64754c,
     inset 0 2px 4px #0002;
-  transform: translateY(2px);
 }
 .begin {
-  background: #ffffff08;
-  border: 1px solid #667e6e;
+  background: transparent;
+  border: 1px solid #667e6e80;
   color: #e3e8d5;
+}
+.begin:hover:not(:disabled) {
+  background: #ffffff08;
+  border-color: #9aaf99;
 }
 .invitation .next {
   margin: 12px 0 0;
   font-size: 10px;
   color: #9fb29d;
   max-width: 450px;
-}
-.caption {
-  position: absolute;
-  bottom: 10px;
-  left: 38px;
-  right: 38px;
-  display: flex;
-  justify-content: space-between;
-  font: 7px var(--mono);
-  letter-spacing: 1.4px;
-  color: #8ca390;
 }
 @media (max-width: 760px) {
   .welcome {
@@ -168,9 +166,6 @@
   }
   .welcome h1 br {
     display: none;
-  }
-  .eyebrow {
-    font-size: 7px;
   }
   .invitation {
     padding: 0;
@@ -191,13 +186,5 @@
   .actions button {
     font-size: 11px;
     padding: 8px 12px;
-  }
-  .caption {
-    left: 22px;
-    right: 22px;
-    font-size: 7px;
-  }
-  .caption span:last-child {
-    display: none;
   }
 }

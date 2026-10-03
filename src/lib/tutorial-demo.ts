@@ -1,6 +1,6 @@
 import { createModule, DEFINITIONS, type ModuleType, type Patch } from './modules';
 
-/** A real, self-playing instrument. No samples, autoplay or prerecorded soundtrack. */
+/** A real, self-playing instrument. No samples or prerecorded soundtrack. */
 export function tutorialDemo(width = 1280, height = 800): Patch {
   const module = (id: string, type: ModuleType, params: Record<string, number>) => ({
     ...createModule(type),
@@ -26,6 +26,7 @@ export function tutorialDemo(width = 1280, height = 800): Patch {
       module('chance', 'random', { range: 1.75, slew: 2.8, polarity: 0 }),
       module('scale', 'quantiser', { scale: 4, root: 2 }),
       module('drift', 'lfo', { rate: 0.043, depth: 2 }),
+      module('warmth', 'saturator', { drive: 1.5, warmth: 0.3, mix: 0.2, level: 1 }),
       module('mix', 'stereo-mixer', {
         level1: 0.65,
         level2: 0.65,
@@ -85,8 +86,8 @@ export function tutorialDemo(width = 1280, height = 800): Patch {
   const rowWidth = Math.max(
     ...rows.map((row) => row.reduce((sum, m) => sum + DEFINITIONS[m.type].width + 12, 72)),
   );
-  // This read-only exhibit may zoom out farther than the editable lesson rack.
-  const heroHeight = width <= 760 ? 390 : 266;
+  // This introductory patch may zoom out farther than the editable lesson rack.
+  const heroHeight = width <= 760 ? 390 : 244;
   const zoom = Math.max(
     0.15,
     Math.min(0.8, (width - 40) / rowWidth, (height - heroHeight - 24) / 852),
@@ -126,8 +127,10 @@ export function tutorialDemo(width = 1280, height = 800): Patch {
     ['tape', 'wet', 'space', 'left'],
     ['space', 'left', 'mix', 'returnL'],
     ['space', 'right', 'mix', 'returnR'],
-    ['mix', 'left', 'master', 'left'],
-    ['mix', 'right', 'master', 'right'],
+    ['mix', 'left', 'warmth', 'left'],
+    ['mix', 'right', 'warmth', 'right'],
+    ['warmth', 'left', 'master', 'left'],
+    ['warmth', 'right', 'master', 'right'],
   ];
   return {
     version: 2,
@@ -147,5 +150,19 @@ export function tutorialDemo(width = 1280, height = 800): Patch {
             ? ['#83afa1', '#9690c6', '#e68554'][i % 3]
             : '#669caf',
     })),
+  };
+}
+
+/** Fit the demo to the viewport without losing the visitor's control settings. */
+export function resizeTutorialDemo(patch: Patch, width: number, height: number): Patch {
+  const layout = tutorialDemo(width, height);
+  return {
+    ...layout,
+    modules: layout.modules.map((m) => {
+      const saved = patch.modules.find(
+        (previous) => previous.id === m.id && previous.type === m.type,
+      );
+      return saved ? { ...m, params: saved.params, data: saved.data } : m;
+    }),
   };
 }

@@ -16,3 +16,11 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Study real Eurorack modules for functional grouping and hierarchy, then create an original, colourful design rather than copying branding or faceplates.
 - Make labels readable at normal rack zoom and distinguish outputs clearly. Printed signal paths should explain the module without crossing labels or obscuring controls.
 - Inspect rendered modules both individually and in a patched rack for spacing, clipping and cable occlusion. Keep audio stopped during UI checks.
+
+## Tutorial teaching
+
+- Build intuition from familiar physical ideas, then explain the signal’s journey and why the next action changes what the learner hears. Use warm, conversational prose rather than slogans or terse technical summaries.
+- Introduce one concept at a time. Define new terms and spell out acronyms when they first appear; explain what they do before asking the learner to use them.
+- Teach through small, audible experiments. Invite exploration and comparison rather than arbitrary numeric targets. Say explicitly when a connection will not change the sound yet, and why.
+- Keep attention on the instrument. Preserve the learner’s patch and module positions; guide related wiring actions continuously instead of requiring navigation between every cable. Never silently make the learner’s connections.
+- Use only the visual feedback needed for the current idea, with simple, non-interactive displays where possible. Keep instructions focused and retain Reset and Do it for me so learners can recover or see a demonstration.

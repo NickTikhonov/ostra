@@ -39,7 +39,7 @@ import {
 import type { ProbeAnchor, ProbeTarget, ScopeFrame } from '@/lib/scope';
 import {
   LESSONS,
-  completeLesson,
+  completeLessonAction,
   lessonComplete,
   prepareLesson,
   restoreTutorial,
@@ -47,8 +47,8 @@ import {
   tutorialCheckpoint,
 } from '@/lib/tutorial';
 import { TutorialCoach, TutorialHighlights } from './tutorial/TutorialCoach';
-import { lessonSignal } from './tutorial/TutorialSignal';
-import { tutorialDemo } from '@/lib/tutorial-demo';
+import { lessonSignal } from '@/lib/tutorial-scope';
+import { resizeTutorialDemo } from '@/lib/tutorial-demo';
 import { TutorialWelcome } from './tutorial/TutorialWelcome';
 
 type Point = { x: number; y: number };
@@ -60,14 +60,15 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
   const [exploring, setExploring] = useState(false);
   const guided = tutorial && !exploring;
   const intro = guided && tutorialStep === -1;
+  const [introMuted, setIntroMuted] = useState(true);
   const [tutorialProbe, setTutorialProbe] = useState<ProbeTarget | null>(null);
-  useEffect(() => {
-    setTutorialProbe(guided ? lessonSignal(tutorialStep) : null);
-  }, [guided, tutorialStep]);
   const [hoveredModule, setHoveredModule] = useState<string | null>(null);
   const [probe, setProbe] = useState<ProbeAnchor | null>(null),
     [scopeFrame, setScopeFrame] = useState<ScopeFrame | null>(null);
   const [patch, setPatch] = useState<Patch | null>(null);
+  useEffect(() => {
+    setTutorialProbe(guided ? lessonSignal(tutorialStep, patch ?? undefined) : null);
+  }, [guided, tutorialStep, patch?.cables]);
   const [running, setRunning] = useState(false),
     [busy, setBusy] = useState(false),
     [saved, setSaved] = useState(true);
@@ -153,6 +154,7 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
     const engine = new AudioEngine();
     audio.current = engine;
     engine.onState = setDisplay;
+    engine.onRunning = setRunning;
     engine.onScope = setScopeFrame;
     engine.onError = notify;
     engine.onRecordingProgress = setRecordSeconds;
@@ -266,8 +268,43 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
     if (wire?.cableId && !patch?.cables.some((c) => c.id === wire.cableId)) selectWire(null);
   }, [patch, wire, selectWire]);
   useEffect(() => {
-    if (intro && current.current) update(() => tutorialDemo(windowSize.width, windowSize.height));
+    if (intro && current.current)
+      update((p) => resizeTutorialDemo(p, windowSize.width, windowSize.height));
   }, [intro, windowSize.width, windowSize.height, update]);
+  const loaded = patch !== null;
+  useEffect(() => {
+    if (!intro || !loaded || !current.current || !audio.current) return;
+    let cancelled = false;
+    setIntroMuted(true);
+    audio.current.setMuted(true);
+    void audio.current.start(current.current, true).catch((error) => {
+      if (!cancelled)
+        notify(error instanceof Error ? error.message : 'Could not prepare the patch.');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [intro, loaded, notify]);
+  const toggleIntroMute = useCallback(async () => {
+    if (!current.current || !audio.current || busy) return;
+    const engine = audio.current;
+    if (!introMuted) {
+      engine.setMuted(true);
+      setIntroMuted(true);
+      return;
+    }
+    setBusy(true);
+    try {
+      // Keep the speakers muted until startup has completed successfully.
+      await engine.start(current.current);
+      engine.setMuted(false);
+      setIntroMuted(false);
+    } catch (error) {
+      notify(error instanceof Error ? error.message : 'Could not start the patch.');
+    } finally {
+      setBusy(false);
+    }
+  }, [introMuted, busy, notify]);
   const toggleAudio = useCallback(async () => {
     if (!current.current || busy) return;
     setBusy(true);
@@ -345,7 +382,7 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
       }
       if (e.code === 'Space' && el === document.body) {
         e.preventDefault();
-        void toggleAudio();
+        void (intro ? toggleIntroMute() : toggleAudio());
       }
       if (e.key.toLowerCase() === 'a' && !e.metaKey && !e.ctrlKey) {
         if (guided) return;
@@ -356,7 +393,7 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
     };
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
-  }, [undoAction, redoAction, toggleAudio, selectWire, guided]);
+  }, [undoAction, redoAction, toggleAudio, toggleIntroMute, intro, selectWire, guided]);
   const connect = useCallback(
     (end: End) => {
       const pending = wireRef.current,
@@ -556,6 +593,7 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
   const enterTutorialStage = async (step: number) => {
     if (busy) return;
     await stopAudio();
+    audio.current?.setMuted(false);
     goLesson(step, true);
   };
   if (!patch || !patch.output) return <main className="rack-loading" />;
@@ -617,6 +655,7 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
         onFocus={(e) => inspectJack(m, p, direction, e.currentTarget, cableColor)}
         onBlur={() => setProbe(null)}
         onPointerDown={(e) => {
+          if (intro) return;
           if (e.button !== 0) return;
           e.stopPropagation();
           if (guided) {
@@ -630,6 +669,7 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
           wirePointer.current = { id: e.pointerId, start: end, started };
         }}
         onClick={(e) => {
+          if (intro) return;
           // Pointer gestures finish on window pointer-up; native keyboard/AT clicks do not.
           if (e.detail !== 0) return;
           wireRef.current ? connect(end) : startWire(end, wirePoint(e.currentTarget), e.shiftKey);
@@ -637,6 +677,7 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
         onContextMenu={(e) => {
           e.preventDefault();
           e.stopPropagation();
+          if (intro) return;
           change((patch) => ({
             ...patch,
             cables: patch.cables.filter((c) =>
@@ -659,14 +700,21 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
     surface,
     viewport,
     output: outputRef,
-    onRemove: (id: string) =>
-      change((p) => ({ ...p, cables: p.cables.filter((c) => c.id !== id) })),
+    onRemove: (id: string) => {
+      if (!intro) change((p) => ({ ...p, cables: p.cables.filter((c) => c.id !== id) }));
+    },
   };
   return (
     <main
       className="rack-app"
       data-tutorial={(guided && !intro) || undefined}
       data-intro={intro || undefined}
+      onPointerDownCapture={() => {
+        if (intro) void audio.current?.context?.resume().catch(() => {});
+      }}
+      onKeyDownCapture={() => {
+        if (intro) void audio.current?.context?.resume().catch(() => {});
+      }}
     >
       <TransportBar
         running={running}
@@ -690,7 +738,6 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
       />
       <div
         className="canvas-viewport"
-        inert={intro}
         ref={viewport}
         onScroll={() => {
           setMenu(null);
@@ -808,8 +855,9 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
       {intro && (
         <TutorialWelcome
           running={running}
+          muted={introMuted}
           busy={busy}
-          onListen={() => void toggleAudio()}
+          onListen={() => void toggleIntroMute()}
           onBegin={() => void enterTutorialStage(0)}
         />
       )}
@@ -825,7 +873,6 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
           <TutorialCoach
             patch={patch}
             frame={scopeFrame}
-            onProbe={setTutorialProbe}
             step={tutorialStep}
             complete={lessonComplete(patch, tutorialStep)}
             running={running}
@@ -844,7 +891,7 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
             }
             onSolve={() => {
               selectWire(null);
-              change((p) => completeLesson(p, tutorialStep));
+              change((p) => completeLessonAction(p, tutorialStep));
             }}
             onExplore={() => setExploring(true)}
           />

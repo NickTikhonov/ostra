@@ -1,5 +1,5 @@
 import { lessonTargets, targetSelector, type Target } from '@/lib/tutorial';
-import { DEFINITIONS } from '@/lib/modules';
+import { DEFINITIONS, type Patch } from '@/lib/modules';
 
 export function targetLabel(target: Target) {
   const def = DEFINITIONS[target.module];
@@ -51,6 +51,6 @@ export function revealTargets(targets: Target[], smooth = true) {
       smooth && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 'smooth' : 'instant',
   });
 }
-export function revealLesson(step: number) {
-  revealTargets(lessonTargets(step));
+export function revealLesson(step: number, patch: Patch) {
+  revealTargets(lessonTargets(step, patch));
 }

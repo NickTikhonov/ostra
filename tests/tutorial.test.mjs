@@ -8,7 +8,7 @@ import ts from 'typescript';
 import { RackEngine } from '../src/audio/engine.js';
 const dir = await mkdtemp(join(tmpdir(), 'ostra-tutorial-'));
 after(() => rm(dir, { recursive: true, force: true }));
-for (const name of ['modules', 'tutorial-demo', 'tutorial', 'patching']) {
+for (const name of ['modules', 'tutorial-demo', 'tutorial', 'tutorial-scope', 'patching']) {
   const source = await readFile(new URL(`../src/lib/${name}.ts`, import.meta.url), 'utf8');
   const js = ts
     .transpileModule(source, {
@@ -16,6 +16,7 @@ for (const name of ['modules', 'tutorial-demo', 'tutorial', 'patching']) {
     })
     .outputText.replaceAll("'./modules'", "'./modules.mjs'")
     .replaceAll("'./tutorial-demo'", "'./tutorial-demo.mjs'")
+    .replaceAll("'./tutorial'", "'./tutorial.mjs'")
     .replace(
       "'../modules/definitions.generated.js'",
       JSON.stringify(new URL('../src/modules/definitions.generated.js', import.meta.url).href),
@@ -27,6 +28,7 @@ const {
   tutorialCheckpoint,
   prepareLesson,
   completeLesson,
+  completeLessonAction,
   lessonComplete,
   lessonTargets,
   saveTutorial,
@@ -53,7 +55,7 @@ test('every lesson starts unfinished, has valid targets, and produces audible bo
       );
     }
     assert.equal(lessonComplete(p, step), false, `lesson ${step + 1} starts incomplete`);
-    for (const t of lessonTargets(step)) {
+    for (const t of lessonTargets(step, p)) {
       const d = DEFINITIONS[t.module];
       assert.ok(
         'param' in t
@@ -62,14 +64,20 @@ test('every lesson starts unfinished, has valid targets, and produces audible bo
       );
     }
     if (LESSONS[step].goal.kind === 'cable') {
-      const [first, second] = lessonTargets(step).map((t) => ({
-        ...t,
-        module: `learn-${t.module}`,
-      }));
-      const next = finishCable(p, beginCable(p, first), second);
-      assert.ok(next, `lesson ${step + 1} works by clicking its numbered jacks without modifiers`);
-      assert.equal(lessonComplete(next, step), true);
-      p = next;
+      let connections = 0;
+      while (!lessonComplete(p, step)) {
+        assert.ok(connections++ < 3, 'bounded number of connections');
+        const [first, second] = lessonTargets(step, p).map((t) => ({
+          ...t,
+          module: `learn-${t.module}`,
+        }));
+        const next = finishCable(p, beginCable(p, first), second);
+        assert.ok(
+          next,
+          `lesson ${step + 1} works by clicking its numbered jacks without modifiers`,
+        );
+        p = next;
+      }
     } else p = completeLesson(p, step);
     assert.equal(lessonComplete(p, step), true);
     assert.deepEqual(validatePatch(p), p);
@@ -94,6 +102,17 @@ test('reset checkpoints reconstruct completed lessons without touching the sourc
     assert.equal(lessonComplete(p, step), false);
   }
   assert.equal(lessonComplete(tutorialCheckpoint(LESSONS.length), LESSONS.length - 1), true);
+});
+test('pitch lesson accepts exploring either direction without a target note or rewiring', () => {
+  const patch = tutorialCheckpoint(1);
+  assert.equal(lessonComplete(patch, 1), false);
+  const cables = structuredClone(patch.cables);
+  for (const tune of [-13, -11, 0, 12]) {
+    patch.modules.find((m) => m.type === 'oscillator').params.tune = tune;
+    assert.equal(lessonComplete(patch, 1), true);
+    assert.deepEqual(patch.cables, cables);
+  }
+  assert.equal(lessonComplete(tutorialCheckpoint(1), 1), false, 'reset restores the exercise');
 });
 test('repatch lesson requires removing the old CV destination, not merely adding another cable', () => {
   const step = LESSONS.findIndex((l) => l.title === 'Same movement, new destination');
@@ -163,8 +182,8 @@ test('the microscope sees oscillator voltage before patching and the same voltag
 });
 test('welcome patch plays an evolving, bounded stereo instrument with no external assets', () => {
   const patch = tutorialCheckpoint(-1, 1280, 800);
-  assert.equal(patch.modules.length, 11);
-  assert.equal(patch.cables.length, 26);
+  assert.equal(patch.modules.length, 12);
+  assert.equal(patch.cables.length, 28);
   assert.deepEqual(validatePatch(patch), patch);
   assert.ok(patch.modules.every((m) => !m.data.assetId));
   const engine = new RackEngine();
@@ -200,6 +219,11 @@ test('new visitors see the intro, progress survives, and starting from scratch c
   assert.equal(restoreTutorial(storage).step, -1);
   saveTutorial(storage, tutorialCheckpoint(-1), -1);
   assert.equal(restoreTutorial(storage).step, -1);
+  const adjusted = tutorialCheckpoint(-1);
+  adjusted.modules.find((m) => m.id === 'garden-warmth').params.drive = 2.1;
+  saveTutorial(storage, adjusted, -1);
+  const resized = restoreTutorial(storage, 390, 844).patch;
+  assert.equal(resized.modules.find((m) => m.id === 'garden-warmth').params.drive, 2.1);
   const first = tutorialCheckpoint(0);
   assert.equal(first.modules.length, 1);
   assert.equal(first.cables.length, 0);
@@ -208,4 +232,190 @@ test('new visitors see the intro, progress survives, and starting from scratch c
   assert.equal(restoreTutorial(storage).step, 0);
   assert.deepEqual(restoreTutorial(storage).patch, first);
   assert.equal(data.get(STORAGE_KEY), 'personal rack');
+});
+
+test('filter wiring advances its target automatically and survives refresh halfway through', () => {
+  const start = tutorialCheckpoint(3);
+  const first = completeLessonAction(start, 3);
+  assert.equal(lessonComplete(first, 3), false);
+  assert.ok(first.cables.some((c) => c.from === 'learn-oscillator' && c.to === 'learn-output'));
+  assert.deepEqual(first.modules, start.modules, 'no module or knob moves');
+  assert.deepEqual(lessonTargets(3, first), [
+    { module: 'filter', port: 'low', direction: 'out' },
+    { module: 'output', port: 'left', direction: 'in' },
+  ]);
+  let saved;
+  const storage = {
+    setItem: (_, value) => {
+      saved = value;
+    },
+    getItem: () => saved,
+  };
+  saveTutorial(storage, first, 3);
+  assert.deepEqual(restoreTutorial(storage).patch, first);
+  assert.deepEqual(lessonTargets(3, restoreTutorial(storage).patch), lessonTargets(3, first));
+  const finished = completeLessonAction(first, 3);
+  assert.equal(lessonComplete(finished, 3), true);
+  assert.ok(!finished.cables.some((c) => c.from === 'learn-oscillator' && c.to === 'learn-output'));
+  assert.equal(LESSONS[4].goal.param, 'cutoff', 'cutoff is immediately next');
+  const old = { ...first, tutorialStep: 4, tutorialLesson: 'Listen through the filter' };
+  saved = JSON.stringify(old);
+  assert.equal(restoreTutorial(storage).step, 3, 'old second wiring step resumes combined lesson');
+  saved = JSON.stringify({ ...finished, tutorialStep: 19, tutorialLesson: 'complete' });
+  assert.equal(
+    restoreTutorial(storage).step,
+    LESSONS.length,
+    'completed old tutorial stays complete',
+  );
+});
+
+test('master waveform follows output selection and becomes smoother as cutoff falls', () => {
+  const read = (patch) => {
+    const engine = new RackEngine();
+    engine.setPatch(patch);
+    engine.setProbe({ id: 'learn-output', port: 'left', direction: 'in', key: 'heard' });
+    engine.render(new Float32Array(24000), new Float32Array(24000));
+    const frame = engine.getProbeFrame().fast;
+    return frame.min.map((v, i) => (v + frame.max[i]) / 2);
+  };
+  const sine = read(tutorialCheckpoint(2));
+  const sawPatch = completeLesson(tutorialCheckpoint(2), 2);
+  const saw = read(sawPatch);
+  const filteredPatch = completeLesson(tutorialCheckpoint(3), 3);
+  filteredPatch.modules.find((m) => m.type === 'filter').params.cutoff = 700;
+  const filtered = read(filteredPatch);
+  const roughness = (a) =>
+    a.slice(2).reduce((sum, v, i) => sum + (v - 2 * a[i + 1] + a[i]) ** 2, 0) /
+    a.reduce((sum, v) => sum + v * v, 0);
+  assert.ok(roughness(saw) > roughness(sine) * 3, 'saw has sharper edges than sine');
+  assert.ok(roughness(filtered) < roughness(saw) * 0.5, 'low cutoff rounds the saw edges');
+});
+
+test('PATH makes a pitch pattern before BLOOM appears, preserving the learner’s sequence', () => {
+  const pitchStep = LESSONS.findIndex((lesson) => lesson.title === 'Meet the Sequencer');
+  const envelopeStep = LESSONS.findIndex(
+    (lesson) => lesson.title === 'Meet the Envelope Generator',
+  );
+  assert.equal(envelopeStep, pitchStep + 1);
+  assert.ok(LESSONS.every((lesson) => (lesson.introduce?.length ?? 0) <= 1));
+  const start = tutorialCheckpoint(pitchStep);
+  assert.ok(start.modules.some((m) => m.type === 'sequencer'));
+  assert.ok(!start.modules.some((m) => m.type === 'envelope'));
+  assert.equal(LESSONS[pitchStep].goal.then, undefined, 'one connection produces a result');
+  const melody = completeLessonAction(start, pitchStep);
+  assert.equal(lessonComplete(melody, pitchStep), true);
+  const sequencer = melody.modules.find((m) => m.type === 'sequencer');
+  sequencer.params.tempo = 120;
+  sequencer.data.steps[2] = 0.5;
+  sequencer.x += 100;
+  const withEnvelope = prepareLesson(melody, envelopeStep);
+  assert.deepEqual(withEnvelope.cables, melody.cables, 'BLOOM arrives unpatched');
+  assert.deepEqual(
+    withEnvelope.modules.filter((m) => m.type !== 'envelope'),
+    melody.modules,
+  );
+  assert.ok(withEnvelope.modules.some((m) => m.type === 'envelope'));
+  assert.equal(lessonComplete(withEnvelope, envelopeStep), false);
+});
+
+test('older envelope progress resumes missing pitch wiring without changing the rack', () => {
+  const pitchStep = LESSONS.findIndex((lesson) => lesson.title === 'Meet the Sequencer');
+  const envelopeStep = LESSONS.findIndex(
+    (lesson) => lesson.title === 'Meet the Envelope Generator',
+  );
+  const patch = completeLessonAction(tutorialCheckpoint(envelopeStep), envelopeStep);
+  patch.cables = patch.cables.filter((c) => !(c.to === 'learn-oscillator' && c.toPort === 'pitch'));
+  for (const title of [
+    'Give each note a beginning and end',
+    'Give the envelope a clock',
+    'Meet PATH and BLOOM',
+    'Let the notes fall silent',
+    'Soften the attack',
+    'Turn voltage into a melody',
+    'Meet PATH',
+  ]) {
+    const storage = {
+      getItem: () => JSON.stringify({ ...patch, tutorialStep: 9, tutorialLesson: title }),
+    };
+    assert.deepEqual(restoreTutorial(storage), { patch, step: pitchStep }, title);
+  }
+});
+
+test('envelope and reverb connections advance within one lesson and retain progress on refresh', () => {
+  for (const [title, oldTitle] of [
+    ['Meet the Envelope Generator', 'Give each note a beginning and end'],
+    ['Meet the Envelope Generator', 'Give the envelope a clock'],
+    ['Meet the Envelope Generator', 'Meet PATH and BLOOM'],
+    ['Meet the Envelope Generator', 'Meet BLOOM'],
+    ['Put your instrument in a room', 'Hear the room'],
+  ]) {
+    const step = LESSONS.findIndex((lesson) => lesson.title === title);
+    const start = tutorialCheckpoint(step);
+    const first = completeLessonAction(start, step);
+    assert.equal(lessonComplete(first, step), false);
+    assert.deepEqual(first.modules, start.modules, 'connections never move modules or knobs');
+    assert.deepEqual(
+      first.cables.filter((c) => c.to === 'learn-output'),
+      start.cables.filter((c) => c.to === 'learn-output'),
+      'the first connection keeps the existing audible route',
+    );
+    assert.notDeepEqual(lessonTargets(step, first), lessonTargets(step, start));
+    let saved;
+    const storage = {
+      getItem: () => saved,
+      setItem: (_, value) => {
+        saved = value;
+      },
+    };
+    saveTutorial(storage, first, step);
+    assert.deepEqual(restoreTutorial(storage), { patch: first, step });
+    saved = JSON.stringify({ ...first, tutorialStep: step + 1, tutorialLesson: oldTitle });
+    assert.deepEqual(
+      restoreTutorial(storage),
+      { patch: first, step },
+      'merged older lessons retain the rack',
+    );
+    const second = completeLessonAction(restoreTutorial(storage).patch, step);
+    assert.equal(lessonComplete(second, step), true);
+    assert.deepEqual(second, completeLesson(start, step));
+  }
+});
+
+test('lesson displays select actual audio or control signals without learner configuration', async () => {
+  const { lessonScope, lessonSignal } = await import(
+    pathToFileURL(join(dir, 'tutorial-scope.mjs'))
+  );
+  assert.equal(lessonScope(0), null);
+  assert.equal(lessonSignal(1), null);
+  assert.equal(lessonScope(LESSONS.length), null);
+  for (const [title, id, port] of [
+    ['Meet the Envelope Generator', 'learn-envelope', 'env'],
+    ['Meet the Sequencer', 'learn-sequencer', 'pitch'],
+  ]) {
+    const step = LESSONS.findIndex((lesson) => lesson.title === title);
+    const patch = completeLesson(tutorialCheckpoint(step), step);
+    assert.equal(lessonScope(step).time, 'slow');
+    assert.equal(lessonScope(step).unipolar, true);
+    const probe = lessonSignal(step, patch);
+    assert.equal(probe.id, id);
+    assert.equal(probe.port, port);
+    assert.equal(probe.direction, 'out');
+    const engine = new RackEngine();
+    engine.setPatch(patch);
+    engine.setProbe(probe);
+    engine.render(new Float32Array(48000 * 5), new Float32Array(48000 * 5));
+    const frame = engine.getProbeFrame();
+    assert.equal(frame.key, probe.key);
+    assert.ok(
+      Math.max(...frame.slow.max) - Math.min(...frame.slow.min) > 0.1,
+      'displayed voltage changes over time',
+    );
+  }
+  const patch = tutorialCheckpoint(2);
+  const before = lessonSignal(2, patch);
+  const after = lessonSignal(2, completeLesson(patch, 2));
+  assert.equal(before.id, 'learn-output');
+  assert.equal(before.direction, 'in');
+  assert.notEqual(before.key, after.key, 'repatching clears the previous waveform');
+  assert.equal(lessonScope(2).time, 'fast');
 });

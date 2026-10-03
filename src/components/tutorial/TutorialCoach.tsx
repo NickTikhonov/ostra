@@ -1,20 +1,18 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { ArrowLeft, ArrowRight, Check, Pause, Play, RotateCcw, Sparkles } from 'lucide-react';
 import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Headphones,
-  Pause,
-  Play,
-  RotateCcw,
-  Sparkles,
-} from 'lucide-react';
-import { LESSONS, lessonTargets, targetSelector, type Target } from '@/lib/tutorial';
+  LESSONS,
+  activeLessonGoal,
+  lessonTargets,
+  targetSelector,
+  type Target,
+} from '@/lib/tutorial';
 import type { Patch } from '@/lib/modules';
-import type { ProbeTarget, ScopeFrame } from '@/lib/scope';
-import { TutorialSignal } from './TutorialSignal';
+import type { ScopeFrame } from '@/lib/scope';
+import { lessonScope, lessonSignal } from '@/lib/tutorial-scope';
+import { TutorialWaveform } from './TutorialWaveform';
 import { revealTargets, revealLesson, targetLabel } from './navigation';
 import styles from './TutorialCoach.module.css';
 
@@ -31,7 +29,6 @@ export function TutorialCoach({
   onExplore,
   patch,
   frame,
-  onProbe,
 }: {
   step: number;
   complete: boolean;
@@ -45,10 +42,13 @@ export function TutorialCoach({
   onExplore: () => void;
   patch: Patch;
   frame: ScopeFrame | null;
-  onProbe: (target: ProbeTarget | null) => void;
 }) {
   const lesson = LESSONS[step],
     title = useRef<HTMLHeadingElement>(null);
+  const scope = lessonScope(step);
+  const goal = activeLessonGoal(patch, step);
+  const sequence = lesson?.goal.kind === 'cable' && !!lesson.goal.then;
+  const secondConnection = sequence && goal !== lesson.goal;
   const container = useRef<HTMLElement>(null);
   useEffect(() => {
     const element = container.current;
@@ -93,18 +93,16 @@ export function TutorialCoach({
       </div>
       {lesson ? (
         <>
-          <div className={styles.columns}>
+          <div
+            className={`${styles.columns} ${styles.firstStep} ${scope ? styles.withWaveform : ''}`}
+          >
             <div className={styles.lesson}>
               <h2 ref={title} tabIndex={-1}>
                 {lesson.title}
               </h2>
-              <p>{lesson.explain}</p>
-              <div className={styles.listen}>
-                <Headphones size={15} />
-                <span>
-                  <b>Listen for</b> {lesson.listen}
-                </span>
-              </div>
+              {lesson.explain.split('\n\n').map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
             </div>
             <div className={styles.task}>
               <span className={styles.taskLabel}>
@@ -114,39 +112,36 @@ export function TutorialCoach({
                   </>
                 ) : (
                   <>
-                    <span className={styles.dot} /> YOUR TURN
+                    <span className={styles.dot} />{' '}
+                    {sequence ? `CONNECTION ${secondConnection ? 2 : 1} OF 2` : 'YOUR TURN'}
                   </>
                 )}
               </span>
-              <p>{lesson.action}</p>
-              {!complete && (
-                <div className={styles.findTargets}>
-                  <span>Find on rack</span>
-                  {lessonTargets(step).map((target, i) => {
-                    return (
-                      <button key={i} onClick={() => revealTargets([target])}>
-                        {i + 1} · {targetLabel(target)}
-                      </button>
-                    );
-                  })}
+              <p>
+                {step === 0 && complete
+                  ? running
+                    ? 'You’re hearing your first patch.'
+                    : 'Press Listen to hear your first patch.'
+                  : goal?.kind === 'cable' && goal.action
+                    ? goal.action
+                    : !running && lesson.actionPaused
+                      ? lesson.actionPaused
+                      : lesson.action}
+              </p>
+              {complete && (
+                <div className={styles.feedback} role="status">
+                  {lesson.discovery}
                 </div>
               )}
-              <div className={styles.feedback} role="status">
-                {complete
-                  ? lesson.discovery
-                  : lesson.goal.kind === 'cable'
-                    ? 'Follow 1 → 2. Click the numbered jacks in order, or drag from 1 to 2.'
-                    : 'Drag the glowing knob up/down, or focus it and use the arrow keys.'}
-              </div>
             </div>
-            <TutorialSignal
-              key={step}
-              step={step}
-              frame={frame}
-              running={running}
-              patch={patch}
-              onProbe={onProbe}
-            />
+            {scope && (
+              <TutorialWaveform
+                {...scope}
+                frame={frame}
+                running={running}
+                probeKey={lessonSignal(step, patch)!.key}
+              />
+            )}
           </div>
           <div className={styles.actions}>
             <button
@@ -158,18 +153,18 @@ export function TutorialCoach({
               <ArrowLeft size={14} /> {step === 0 ? 'Introduction' : 'Back'}
             </button>
             <button className={styles.textButton} onClick={onReset} disabled={busy}>
-              <RotateCcw size={12} /> Reset lesson
+              <RotateCcw size={12} /> Reset
             </button>
             {!complete && (
               <button className={styles.textButton} onClick={onSolve} disabled={busy}>
-                <Sparkles size={12} /> Show me
+                <Sparkles size={12} /> Do it for me
               </button>
             )}
             <span className={styles.spacer} />
             <button
               className={`${styles.listenButton} ${running ? styles.playing : ''}`}
               onClick={onListen}
-              disabled={busy}
+              disabled={busy || (step === 0 && !complete)}
               aria-label={running ? 'Pause tutorial audio' : 'Listen to the patch'}
             >
               {running ? <Pause size={14} /> : <Play size={14} fill="currentColor" />}
@@ -184,21 +179,17 @@ export function TutorialCoach({
       ) : (
         <>
           <h2 ref={title} tabIndex={-1}>
-            That sound is your instrument.
+            You built your first instrument.
           </h2>
           <p className={styles.finishText}>
-            You wired a voice from scratch. Keep playing: change PATH’s voltages, move the LFO, or
-            make HALO a huge room. This practice rack saves separately from your own.
+            You started with one oscillator and connected the controls that give it tone, volume,
+            rhythm and melody. Now you can change the instrument yourself: try a new sequence,
+            reshape the envelope, or move a control cable to another input.
           </p>
-          <div className={styles.flow}>
-            <span>ORBIT · sound</span>
-            <ArrowRight size={12} />
-            <span>SIEVE · tone</span>
-            <ArrowRight size={12} />
-            <span>VEIL · volume</span>
-            <ArrowRight size={12} />
-            <span>HALO · space</span>
-          </div>
+          <p className={styles.finishText}>
+            Keep exploring opens this patch for you to add modules and experiment. Your tutorial
+            patch is saved separately from your main rack.
+          </p>
           <div className={styles.actions}>
             <button className={styles.textButton} onClick={onReset} disabled={busy}>
               <RotateCcw size={12} /> Start again
@@ -241,17 +232,18 @@ export function TutorialHighlights({
   revision: number;
 }) {
   const [boxes, setBoxes] = useState<Box[]>([]);
+  const targetKey = JSON.stringify(lessonTargets(step, patch));
   useEffect(() => {
     // Wait for the coach to measure itself before framing the working area.
     let second = 0;
     const first = requestAnimationFrame(() => {
-      second = requestAnimationFrame(() => revealLesson(step));
+      second = requestAnimationFrame(() => revealLesson(step, patch));
     });
     return () => {
       cancelAnimationFrame(first);
       cancelAnimationFrame(second);
     };
-  }, [step, revision]);
+  }, [step, revision, targetKey]);
   useEffect(() => {
     if (complete) return;
     let frame = 0;
@@ -260,7 +252,7 @@ export function TutorialHighlights({
       frame = requestAnimationFrame(() => {
         const viewport = document.querySelector('.canvas-viewport')?.getBoundingClientRect();
         if (!viewport) return;
-        const targets = lessonTargets(step);
+        const targets = lessonTargets(step, patch);
         setBoxes(
           targets.flatMap((target: Target, index) => {
             const element = document.querySelector(targetSelector(target));
