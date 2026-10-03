@@ -100,6 +100,20 @@ npm start
 
 The build produces a static `out/` directory. Serve it at the root of an HTTPS site; localhost works for development. There is no backend to deploy. Browser storage belongs to its origin, so moving between localhost and a hosted URL does not transfer your rack or samples.
 
+### Analytics
+
+Vercel Web Analytics records page views and these custom events:
+
+| Event                     | Properties                                                                          |
+| ------------------------- | ----------------------------------------------------------------------------------- |
+| `module_added`            | `module_name`, `module_type`, `context`                                             |
+| `cable_patched`           | `from_module`, `to_module`, their corresponding `_type` fields, `context`, `method` |
+| `tutorial_step_completed` | `tutorial_id: "onboarding"`, zero-based `step_index`, `step_title`, `method`        |
+
+`context` is `playground` or `tutorial`; tutorial module and cable events also include `tutorial_id: "onboarding"`. `method` distinguishes `manual` actions from `demo` actions performed with **Do it for me**. The fixed output is named `MASTER`.
+
+Connections count when committed, including repatching. Modules introduced by a tutorial lesson count when they first appear. Step completion fires when the goal is met, without waiting for **Continue**; repeated knob changes, undo/redo, and lesson resets do not repeat a completion within a loaded tutorial run. Restoring saved progress does not replay events, and choosing **Learn to patch** starts a fresh completion funnel. Saved patches, sample names, and audio are not included in event properties. Custom events require a Vercel Pro or Enterprise plan; development events are logged locally by the SDK.
+
 ## Contributing
 
 New modules, thoughtful panel improvements, DSP fixes and small reproducible bug reports are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and [AGENTS.md](AGENTS.md) for module design principles.

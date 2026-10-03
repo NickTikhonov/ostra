@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { track } from '@vercel/analytics';
 import { Plus, Minus, Maximize2, X } from 'lucide-react';
 import {
   DEFINITIONS,
@@ -20,6 +21,7 @@ import {
 import { restoreRack, saveRack } from '@/lib/storage';
 import { startSampleMaintenance } from '@/lib/sample-maintenance';
 import { AudioEngine } from '@/lib/audio';
+import { createRackAnalytics, type EditMethod } from '@/lib/rack-analytics';
 import { MODULES } from '@/modules/registry.generated';
 import type { DisplayState } from '@/modules/types';
 import { Jack } from './rack/Jack';
@@ -54,6 +56,7 @@ import { TutorialWelcome } from './tutorial/TutorialWelcome';
 type Point = { x: number; y: number };
 type AddMenu = Point & { screenX: number; screenY: number };
 export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
+  const [analytics] = useState(() => createRackAnalytics(track));
   const [tutorialStep, setTutorialStep] = useState(tutorial ? -1 : 0);
   const [tutorialRevision, setTutorialRevision] = useState(0);
   const tutorialStepRef = useRef(tutorial ? -1 : 0);
@@ -103,10 +106,15 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
     setPatch(next);
   }, []);
   const update = useCallback(
-    (fn: (p: Patch) => Patch) => {
-      if (current.current) replace(fn(current.current));
+    (fn: (p: Patch) => Patch, method?: EditMethod) => {
+      const before = current.current;
+      if (!before) return;
+      const next = fn(before);
+      replace(next);
+      if (method)
+        analytics.edit(before, next, { tutorial, step: guided ? tutorialStep : undefined }, method);
     },
-    [replace],
+    [replace, analytics, tutorial, guided, tutorialStep],
   );
   const remember = useCallback(() => {
     if (current.current) {
@@ -116,9 +124,9 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
     }
   }, []);
   const change = useCallback(
-    (fn: (p: Patch) => Patch) => {
+    (fn: (p: Patch) => Patch, method: EditMethod = 'manual') => {
       remember();
-      update(fn);
+      update(fn, method);
     },
     [remember, update],
   );
@@ -196,6 +204,7 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
         if (tutorial) {
           const result = restoreTutorial(localStorage, window.innerWidth, window.innerHeight);
           p = result.patch;
+          analytics.resume(p, result.step);
           tutorialStepRef.current = result.step;
           setTutorialStep(result.step);
         } else {
@@ -229,7 +238,7 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
       window.removeEventListener('pagehide', flush);
       void engine.close();
     };
-  }, [notify, replace, tutorial]);
+  }, [notify, replace, tutorial, analytics]);
   useEffect(() => {
     if (!patch) return;
     audio.current?.update(patch);
@@ -498,16 +507,19 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
     };
   }, [update, connect, selectWire]);
   const setParam = (id: string, key: string, value: number) =>
-    update((p) => ({
-      ...p,
-      output:
-        p.output?.id === id
-          ? { ...p.output, params: { ...p.output.params, [key]: value } }
-          : p.output,
-      modules: p.modules.map((m) =>
-        m.id === id ? { ...m, params: { ...m.params, [key]: value } } : m,
-      ),
-    }));
+    update(
+      (p) => ({
+        ...p,
+        output:
+          p.output?.id === id
+            ? { ...p.output, params: { ...p.output.params, [key]: value } }
+            : p.output,
+        modules: p.modules.map((m) =>
+          m.id === id ? { ...m, params: { ...m.params, [key]: value } } : m,
+        ),
+      }),
+      'manual',
+    );
   const removeModule = (id: string) => {
     change((p) => ({
       ...p,
@@ -578,6 +590,7 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
     const next = reset
       ? tutorialCheckpoint(step, windowSize.width, windowSize.height)
       : prepareLesson(current.current, step);
+    analytics.introduce(current.current, next, step);
     tutorialStepRef.current = step;
     setTutorialStep(step);
     setTutorialRevision((n) => n + 1);
@@ -594,6 +607,7 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
     if (busy) return;
     await stopAudio();
     audio.current?.setMuted(false);
+    if (step === 0) analytics.restart();
     goLesson(step, true);
   };
   if (!patch || !patch.output) return <main className="rack-loading" />;
@@ -891,7 +905,7 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
             }
             onSolve={() => {
               selectWire(null);
-              change((p) => completeLessonAction(p, tutorialStep));
+              change((p) => completeLessonAction(p, tutorialStep), 'demo');
             }}
             onExplore={() => setExploring(true)}
           />
