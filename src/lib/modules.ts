@@ -23,6 +23,7 @@ export function patchModules(patch: Patch): RackModule[] {
   return patch.output ? [...patch.modules, patch.output] : patch.modules;
 }
 export const STORAGE_KEY = 'modular-workshop:patch:v2';
+export const TUTORIAL_KEY = 'ostra:tutorial:v1';
 export const COLORS = ['#e68554', '#83afa1', '#d6b95f', '#9690c6', '#669caf'];
 export const MAX_MODULES = 48;
 // One cable per input: every patch the editor can create must remain loadable.

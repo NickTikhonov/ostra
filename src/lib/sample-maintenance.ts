@@ -1,4 +1,4 @@
-import { STORAGE_KEY, type Patch } from './modules';
+import { STORAGE_KEY, TUTORIAL_KEY, type Patch } from './modules';
 import { SAMPLE_LOCK, pendingSampleIds, pruneSamples } from './sample-assets';
 
 type StorageReader = Pick<Storage, 'getItem'>;
@@ -18,7 +18,7 @@ export function sampleReferences(patches: Patch[], storage: StorageReader): Set<
   };
   try {
     for (const patch of patches) collect(patch);
-    for (const key of [STORAGE_KEY, `${STORAGE_KEY}:recovery`]) {
+    for (const key of [STORAGE_KEY, `${STORAGE_KEY}:recovery`, TUTORIAL_KEY]) {
       const saved = storage.getItem(key);
       if (saved) collect(JSON.parse(saved));
     }

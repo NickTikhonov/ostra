@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { Plus, Minus, Maximize2, X } from 'lucide-react';
 import {
   DEFINITIONS,
@@ -35,11 +36,34 @@ import {
   type CableEnd as End,
   type PendingCable,
 } from '@/lib/patching';
-import type { ProbeAnchor, ScopeFrame } from '@/lib/scope';
+import type { ProbeAnchor, ProbeTarget, ScopeFrame } from '@/lib/scope';
+import {
+  LESSONS,
+  completeLesson,
+  lessonComplete,
+  prepareLesson,
+  restoreTutorial,
+  saveTutorial,
+  tutorialCheckpoint,
+} from '@/lib/tutorial';
+import { TutorialCoach, TutorialHighlights } from './tutorial/TutorialCoach';
+import { lessonSignal } from './tutorial/TutorialSignal';
+import { tutorialDemo } from '@/lib/tutorial-demo';
+import { TutorialWelcome } from './tutorial/TutorialWelcome';
 
 type Point = { x: number; y: number };
 type AddMenu = Point & { screenX: number; screenY: number };
-export default function Rack() {
+export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
+  const [tutorialStep, setTutorialStep] = useState(tutorial ? -1 : 0);
+  const [tutorialRevision, setTutorialRevision] = useState(0);
+  const tutorialStepRef = useRef(tutorial ? -1 : 0);
+  const [exploring, setExploring] = useState(false);
+  const guided = tutorial && !exploring;
+  const intro = guided && tutorialStep === -1;
+  const [tutorialProbe, setTutorialProbe] = useState<ProbeTarget | null>(null);
+  useEffect(() => {
+    setTutorialProbe(guided ? lessonSignal(tutorialStep) : null);
+  }, [guided, tutorialStep]);
   const [hoveredModule, setHoveredModule] = useState<string | null>(null);
   const [probe, setProbe] = useState<ProbeAnchor | null>(null),
     [scopeFrame, setScopeFrame] = useState<ScopeFrame | null>(null);
@@ -167,11 +191,20 @@ export default function Rack() {
       if (disposed) return;
       let p: Patch;
       try {
-        const result = restoreRack(localStorage);
-        p = result.patch;
-        if (result.recovered) notify('Saved rack recovered. Previous data kept as a backup.');
+        if (tutorial) {
+          const result = restoreTutorial(localStorage, window.innerWidth, window.innerHeight);
+          p = result.patch;
+          tutorialStepRef.current = result.step;
+          setTutorialStep(result.step);
+        } else {
+          const result = restoreRack(localStorage);
+          p = result.patch;
+          if (result.recovered) notify('Saved rack recovered. Previous data kept as a backup.');
+        }
       } catch {
-        p = starterPatch();
+        p = tutorial
+          ? tutorialCheckpoint(-1, window.innerWidth, window.innerHeight)
+          : starterPatch();
         storageAvailable.current = false;
         setSaved(false);
         notify('Browser storage is unavailable. Changes cannot be saved.');
@@ -182,7 +215,8 @@ export default function Rack() {
     const flush = () => {
       if (current.current && storageAvailable.current)
         try {
-          saveRack(localStorage, current.current);
+          if (tutorial) saveTutorial(localStorage, current.current, tutorialStepRef.current);
+          else saveRack(localStorage, current.current);
         } catch {}
     };
     window.addEventListener('pagehide', flush);
@@ -193,7 +227,7 @@ export default function Rack() {
       window.removeEventListener('pagehide', flush);
       void engine.close();
     };
-  }, [notify, replace]);
+  }, [notify, replace, tutorial]);
   useEffect(() => {
     if (!patch) return;
     audio.current?.update(patch);
@@ -201,18 +235,19 @@ export default function Rack() {
     setSaved(false);
     const timer = setTimeout(() => {
       try {
-        saveRack(localStorage, patch);
+        if (tutorial) saveTutorial(localStorage, patch, tutorialStep);
+        else saveRack(localStorage, patch);
         setSaved(true);
       } catch {
         notify('Rack could not be saved: browser storage is full or disabled.');
       }
     }, 180);
     return () => clearTimeout(timer);
-  }, [patch, notify]);
+  }, [patch, notify, tutorial, tutorialStep]);
   useEffect(() => {
     setScopeFrame(null);
-    audio.current?.probe(probe);
-  }, [probe]);
+    audio.current?.probe(guided ? tutorialProbe : probe);
+  }, [probe, guided, tutorialProbe]);
   useEffect(() => {
     setProbe(null);
     setHoveredModule(null);
@@ -230,6 +265,9 @@ export default function Rack() {
   useEffect(() => {
     if (wire?.cableId && !patch?.cables.some((c) => c.id === wire.cableId)) selectWire(null);
   }, [patch, wire, selectWire]);
+  useEffect(() => {
+    if (intro && current.current) update(() => tutorialDemo(windowSize.width, windowSize.height));
+  }, [intro, windowSize.width, windowSize.height, update]);
   const toggleAudio = useCallback(async () => {
     if (!current.current || busy) return;
     setBusy(true);
@@ -310,6 +348,7 @@ export default function Rack() {
         void toggleAudio();
       }
       if (e.key.toLowerCase() === 'a' && !e.metaKey && !e.ctrlKey) {
+        if (guided) return;
         e.preventDefault();
         setProbe(null);
         setMenu({ x: LEFT, y: TOP + ROW_HEIGHT, screenX: 100, screenY: 100 });
@@ -317,7 +356,7 @@ export default function Rack() {
     };
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
-  }, [undoAction, redoAction, toggleAudio, selectWire]);
+  }, [undoAction, redoAction, toggleAudio, selectWire, guided]);
   const connect = useCallback(
     (end: End) => {
       const pending = wireRef.current,
@@ -458,6 +497,7 @@ export default function Rack() {
     setMenu(null);
   };
   const openMenu = (e: React.MouseEvent) => {
+    if (guided) return;
     if ((e.target as HTMLElement).closest('.module,.cable,.add-menu,.dock')) return;
     if (wireRef.current) {
       selectWire(null);
@@ -495,6 +535,28 @@ export default function Rack() {
       x: rect.right,
       y: rect.top + rect.height / 2,
     });
+  };
+  const goLesson = (step: number, reset = false) => {
+    if (!current.current || busy) return;
+    const next = reset
+      ? tutorialCheckpoint(step, windowSize.width, windowSize.height)
+      : prepareLesson(current.current, step);
+    tutorialStepRef.current = step;
+    setTutorialStep(step);
+    setTutorialRevision((n) => n + 1);
+    setExploring(false);
+    selectWire(null);
+    setProbe(null);
+    setMenu(null);
+    undo.current = [];
+    redo.current = [];
+    replace(next);
+    if (reset) viewport.current?.scrollTo({ top: 0, left: 0 });
+  };
+  const enterTutorialStage = async (step: number) => {
+    if (busy) return;
+    await stopAudio();
+    goLesson(step, true);
   };
   if (!patch || !patch.output) return <main className="rack-loading" />;
   const contentWidth = Math.max(
@@ -557,6 +619,12 @@ export default function Rack() {
         onPointerDown={(e) => {
           if (e.button !== 0) return;
           e.stopPropagation();
+          if (guided) {
+            // Focusing a jack on the scaled canvas can scroll its unscaled box
+            // into view. Keep the learner's view still while patching.
+            e.preventDefault();
+            e.currentTarget.focus({ preventScroll: true });
+          }
           const started = !wireRef.current;
           if (started) startWire(end, wirePoint(e.currentTarget), e.shiftKey);
           wirePointer.current = { id: e.pointerId, start: end, started };
@@ -595,7 +663,11 @@ export default function Rack() {
       change((p) => ({ ...p, cables: p.cables.filter((c) => c.id !== id) })),
   };
   return (
-    <main className="rack-app">
+    <main
+      className="rack-app"
+      data-tutorial={(guided && !intro) || undefined}
+      data-intro={intro || undefined}
+    >
       <TransportBar
         running={running}
         busy={busy}
@@ -618,6 +690,7 @@ export default function Rack() {
       />
       <div
         className="canvas-viewport"
+        inert={intro}
         ref={viewport}
         onScroll={() => {
           setMenu(null);
@@ -680,6 +753,7 @@ export default function Rack() {
             {patch.modules.map((m) => (
               <ModuleHost
                 key={m.id}
+                locked={guided}
                 plugin={MODULES[m.type]}
                 controls={{
                   module: m,
@@ -720,6 +794,62 @@ export default function Rack() {
         </div>
       </div>
       <CableLayer {...cableProps} screen width={windowSize.width} height={windowSize.height} />
+      {!tutorial && (
+        <Link className="learn-entry dock" href="/learn">
+          <span>?</span> Learn modular <small>Build your first patch →</small>
+        </Link>
+      )}
+      {tutorial && exploring && (
+        <div className="learn-entry dock">
+          <button onClick={() => setExploring(false)}>Tutorial complete · Show guide</button>
+          <Link href="/">My rack →</Link>
+        </div>
+      )}
+      {intro && (
+        <TutorialWelcome
+          running={running}
+          busy={busy}
+          onListen={() => void toggleAudio()}
+          onBegin={() => void enterTutorialStage(0)}
+        />
+      )}
+      {guided && !intro && (
+        <>
+          <TutorialHighlights
+            step={tutorialStep}
+            complete={lessonComplete(patch, tutorialStep)}
+            patch={patch}
+            pending={!!wire}
+            revision={tutorialRevision}
+          />
+          <TutorialCoach
+            patch={patch}
+            frame={scopeFrame}
+            onProbe={setTutorialProbe}
+            step={tutorialStep}
+            complete={lessonComplete(patch, tutorialStep)}
+            running={running}
+            busy={busy}
+            onListen={() => void toggleAudio()}
+            onNext={() => {
+              if (lessonComplete(patch, tutorialStep)) goLesson(tutorialStep + 1);
+            }}
+            onBack={() =>
+              tutorialStep === 0 ? void enterTutorialStage(-1) : goLesson(tutorialStep - 1, true)
+            }
+            onReset={() =>
+              tutorialStep >= LESSONS.length
+                ? void enterTutorialStage(-1)
+                : goLesson(tutorialStep, true)
+            }
+            onSolve={() => {
+              selectWire(null);
+              change((p) => completeLesson(p, tutorialStep));
+            }}
+            onExplore={() => setExploring(true)}
+          />
+        </>
+      )}
       <div className="dock zoom-dock">
         <button
           aria-label="Zoom out"
@@ -760,7 +890,7 @@ export default function Rack() {
           onClose={() => setMenu(null)}
         />
       )}
-      {probe && (
+      {probe && !guided && (
         <JackScope
           key={probe.key}
           probe={probe}

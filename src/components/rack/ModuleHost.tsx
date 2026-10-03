@@ -10,12 +10,14 @@ export function ModuleHost({
   renderPort,
   onMove,
   onRemove,
+  locked = false,
 }: {
   plugin: ModulePlugin;
   controls: ModuleControls;
   renderPort: (port: Port, direction: 'in' | 'out') => ReactNode;
   onMove: (event: PointerEvent<HTMLElement>) => void;
   onRemove: () => void;
+  locked?: boolean;
 }) {
   const { definition: d, Panel } = plugin;
   const { module: m } = controls;
@@ -26,6 +28,7 @@ export function ModuleHost({
         aria-label={`${d.name} module`}
         data-header={d.headerLayout}
         data-port-style={d.portStyle}
+        data-module-id={m.id}
         style={
           {
             left: m.x,
@@ -46,23 +49,29 @@ export function ModuleHost({
         <i className="screw tr" />
         <i className="screw bl" />
         <i className="screw br" />
-        <header className="module-heading" title="Drag to move" onPointerDown={onMove}>
+        <header
+          className="module-heading"
+          title={locked ? undefined : 'Drag to move'}
+          onPointerDown={locked ? undefined : onMove}
+        >
           <span className="module-mark">{d.mark}</span>
           <h2>{d.name}</h2>
           <span className="module-subtitle">{d.subtitle}</span>
         </header>
-        <button
-          className="module-remove"
-          aria-label={`Remove ${d.name} module`}
-          title="Remove module"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove();
-          }}
-        >
-          <Trash2 size={12} aria-hidden="true" />
-        </button>
+        {!locked && (
+          <button
+            className="module-remove"
+            aria-label={`Remove ${d.name} module`}
+            title="Remove module"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+          >
+            <Trash2 size={12} aria-hidden="true" />
+          </button>
+        )}
         <div className="controls">
           <Panel />
         </div>

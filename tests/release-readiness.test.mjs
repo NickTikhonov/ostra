@@ -281,13 +281,17 @@ test('worklet-reported failures also stop transport and can restart', async () =
 });
 
 test('cleanup retains current, undo, redo, saved and recovery sample references', async () => {
-  await seed('current', 'undo', 'redo', 'saved', 'recovery', 'orphan');
+  await seed('current', 'undo', 'redo', 'saved', 'recovery', 'tutorial', 'orphan');
   const saved = storage();
   saveRack(saved, withSample('saved'));
   saved.setItem(`${STORAGE_KEY}:recovery`, JSON.stringify(withSample('recovery')));
+  saved.setItem(
+    'ostra:tutorial:v1',
+    JSON.stringify({ ...withSample('tutorial'), tutorialStep: 13 }),
+  );
   const keep = sampleReferences(['current', 'undo', 'redo'].map(withSample), saved);
   await pruneSamples(keep);
-  for (const id of ['current', 'undo', 'redo', 'saved', 'recovery'])
+  for (const id of ['current', 'undo', 'redo', 'saved', 'recovery', 'tutorial'])
     assert.ok(await getSample(id), id);
   assert.equal(await getSample('orphan'), null);
   await pruneSamples(sampleReferences([withSample('current')], saved));

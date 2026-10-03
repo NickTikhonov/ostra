@@ -970,3 +970,84 @@ input {
   opacity: 0.68;
   overflow: visible;
 }
+
+/* Lessons occupy their own saved rack; the coach never covers its controls. */
+.rack-app[data-tutorial] .canvas-viewport {
+  bottom: var(--tutorial-height, 270px);
+  overflow-anchor: none;
+}
+.rack-app[data-tutorial] .zoom-dock {
+  bottom: calc(var(--tutorial-height, 270px) + 10px);
+}
+.rack-app[data-tutorial] .module-heading {
+  cursor: default;
+}
+.rack-app[data-tutorial] .notice {
+  bottom: calc(var(--tutorial-height, 270px) + 12px);
+}
+.learn-entry {
+  position: absolute;
+  left: 22px;
+  bottom: 22px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  color: #e3e4cc;
+  text-decoration: none;
+  font-size: 12px;
+  border: 1px solid #697764;
+  border-radius: 8px;
+  background: #33483e;
+  box-shadow: 0 3px 12px #0003;
+}
+.learn-entry > span {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid #b2bd94;
+  border-radius: 50%;
+  font: 12px var(--mono);
+}
+.learn-entry small {
+  color: #acba9e;
+  font-size: 10px;
+}
+.learn-entry button,
+.learn-entry a {
+  color: inherit;
+  background: none;
+  font-size: 11px;
+}
+.learn-entry:hover {
+  background: #40594c;
+}
+@media (max-width: 760px) {
+  .rack-app[data-tutorial] .canvas-viewport {
+    bottom: var(--tutorial-height, 45dvh);
+  }
+  .learn-entry small {
+    display: none;
+  }
+}
+
+/* The welcome patch is a live exhibit; lessons keep the normal editable canvas. */
+.rack-app[data-intro] > header,
+.rack-app[data-intro] .zoom-dock,
+.rack-app[data-intro] > .screen-cables {
+  display: none;
+}
+.rack-app[data-intro] .canvas-viewport {
+  inset: 266px 0 0;
+  overflow: hidden;
+}
+.rack-app[data-intro] .canvas {
+  background-color: #23322e;
+}
+@media (max-width: 760px) {
+  .rack-app[data-intro] .canvas-viewport {
+    top: 390px;
+  }
+}

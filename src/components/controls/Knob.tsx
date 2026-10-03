@@ -104,6 +104,7 @@ export function Knob({
         <button
           className="knob"
           role="slider"
+          data-param={param.id}
           aria-label={param.label}
           aria-valuemin={param.min}
           aria-valuemax={param.max}

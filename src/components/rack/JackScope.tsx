@@ -5,7 +5,7 @@ import type { ProbeAnchor, ScopeFrame, ScopeTrace } from '@/lib/scope';
 
 const HOVER_DELAY_MS = 600;
 
-function Trace({
+export function Trace({
   trace,
   label,
   color,
