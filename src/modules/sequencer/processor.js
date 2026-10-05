@@ -67,7 +67,7 @@ const processor = {
   }),
   process({ params: p, inputs, connected, outputs, state: s, data: raw, sampleRate: sr }) {
     const data = /** @type {SequenceData} */ (raw);
-    const length = Math.round(p.length),
+    const length = clamp(Math.round(p.length), 1, data.steps.length),
       mode = Math.round(p.mode);
     const external = !!connected.clock,
       addressed = !!connected.stage;
@@ -178,7 +178,11 @@ const processor = {
     outputs.pitch = s.voltage;
     const duration =
       (external && s.period > 0 ? s.period : internalPeriod) * (data.gateLengths[s.step] ?? 0.45);
-    const high = data.legacyClockGate && external ? clock : s.elapsed < duration;
+    // A full-length gate stays high across clock jitter and tied stages.
+    const high =
+      data.legacyClockGate && external
+        ? clock
+        : data.gateLengths[s.step] >= 1 || s.elapsed < duration;
     outputs.gate = s.fire && data.gates[s.step] && high ? 5 : 0;
     s.elapsed += dt;
   },

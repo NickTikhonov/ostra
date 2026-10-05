@@ -3,10 +3,10 @@ import { createData, restoreData } from './data.js';
 /** @type {import('../types').ModuleDefinition} */
 export const definition = {
   type: 'sequencer',
-  version: 3,
+  version: 4,
   name: 'PATH',
-  subtitle: 'VOLTAGE / 8',
-  category: 'SEQ / 8',
+  subtitle: 'VOLTAGE SEQUENCER',
+  category: 'SEQ / 64',
   order: 3,
   color: '#395d7c',
   panel: '#a9c8df',
@@ -34,7 +34,7 @@ export const definition = {
       id: 'length',
       label: 'LENGTH',
       min: 1,
-      max: 8,
+      max: 64,
       default: 8,
       step: 1,
       smooth: false,

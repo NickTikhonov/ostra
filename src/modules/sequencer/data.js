@@ -14,6 +14,7 @@
  * @property {number} mutation Fraction of the editing range used by mutation.
  * @property {boolean} legacyClockGate Preserve old external-clock gate timing until explicitly changed.
  */
+export const MAX_STEPS = 64;
 export const ORDERS = ['Forward', 'Random', 'Reverse', 'Ping-pong', 'Random walk'];
 /** @param {number} n @param {number} lo @param {number} hi */
 export const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
@@ -45,15 +46,23 @@ export function restoreData(saved) {
   );
   // Versionless patches used top-level semitone arrays. v3 stores literal volts.
   const legacy = !(typeof saved.version === 'number' && saved.version >= 3);
+  const params = /** @type {Record<string, unknown>} */ (saved.params ?? {});
+  const requested = legacy
+    ? 8
+    : Math.max(
+        number(params.length, 8, 1, MAX_STEPS),
+        Array.isArray(data.steps) ? data.steps.length : 8,
+      );
+  const capacity = clamp(Math.ceil(requested / 8) * 8, 8, MAX_STEPS);
   /** @param {string} key @param {boolean} fallback */
   const flags = (key, fallback) =>
-    Array.from({ length: 8 }, (_, i) => {
+    Array.from({ length: capacity }, (_, i) => {
       const values = data[key];
       return Array.isArray(values) && typeof values[i] === 'boolean' ? values[i] : fallback;
     });
   /** @param {string} key @param {number} fallback @param {number} lo @param {number} hi */
   const values = (key, fallback, lo, hi) =>
-    Array.from({ length: 8 }, (_, i) => {
+    Array.from({ length: capacity }, (_, i) => {
       const array = data[key];
       return number(Array.isArray(array) ? array[i] : undefined, fallback, lo, hi);
     });
@@ -75,4 +84,11 @@ export function restoreData(saved) {
     mutation: number(data.mutation, 0.1, 0, 1),
     legacyClockGate: legacy || data.legacyClockGate === true,
   };
+}
+
+/** Grow in pages of eight without discarding inactive stages when shortening a phrase.
+ * @param {SequenceData} data @param {number} length @returns {SequenceData}
+ */
+export function resizeData(data, length) {
+  return restoreData({ version: 4, params: { length }, data });
 }

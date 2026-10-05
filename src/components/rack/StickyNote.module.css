@@ -1,0 +1,47 @@
+.note {
+  position: absolute;
+  z-index: 16;
+  pointer-events: none;
+  user-select: none;
+  transform: rotate(var(--note-angle)) scale(var(--note-scale));
+  transform-origin: center;
+  filter: drop-shadow(2px 5px 3px #17190f50);
+  transition: opacity 140ms ease-out;
+  color: #354356;
+  font-family: 'Kalam', 'Comic Sans MS', 'Chalkboard SE', cursive;
+  font-weight: 400;
+}
+.note[data-faded] {
+  opacity: 0.16;
+}
+.paper {
+  height: 100%;
+  box-sizing: border-box;
+  padding: 17px 18px 13px;
+  background: linear-gradient(
+    177deg,
+    #e4d280 0,
+    #eddd92 19%,
+    #f4e6a5 54%,
+    #f4e6a5 91%,
+    #fff1b6 100%
+  );
+  clip-path: polygon(0 1%, 99% 0, 100% 97%, 95% 100%, 1% 98%);
+}
+.label {
+  display: block;
+  font-size: 18px;
+  line-height: 1.2;
+  margin-bottom: 7px;
+}
+.paper p {
+  margin: 0;
+  font: inherit;
+  font-size: 25px;
+  line-height: 1.15;
+}
+@media (prefers-reduced-motion: reduce) {
+  .note {
+    transition: none;
+  }
+}

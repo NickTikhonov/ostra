@@ -86,12 +86,13 @@ export function tutorialDemo(width = 1280, height = 800): Patch {
   const rowWidth = Math.max(
     ...rows.map((row) => row.reduce((sum, m) => sum + DEFINITIONS[m.type].width + 12, 72)),
   );
-  // This introductory patch may zoom out farther than the editable lesson rack.
+  // Phones scroll the instrument so knobs and notes remain usable. Larger
+  // displays fit the whole introductory patch, unlike the editable lesson rack.
   const heroHeight = width <= 760 ? 390 : 244;
-  const zoom = Math.max(
-    0.15,
-    Math.min(0.8, (width - 40) / rowWidth, (height - heroHeight - 24) / 852),
-  );
+  const zoom =
+    width <= 760
+      ? 0.65
+      : Math.max(0.15, Math.min(0.8, (width - 40) / rowWidth, (height - heroHeight - 24) / 852));
   const worldWidth = Math.max(rowWidth, width / zoom);
   for (const [rowIndex, row] of rows.entries()) {
     let x = (worldWidth - row.reduce((sum, m) => sum + DEFINITIONS[m.type].width + 12, -12)) / 2;

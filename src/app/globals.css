@@ -1034,20 +1034,22 @@ input {
 }
 
 /* The welcome patch is a live exhibit; lessons keep the normal editable canvas. */
+.rack-app[data-intro] {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
 .rack-app[data-intro] > header,
 .rack-app[data-intro] .zoom-dock,
 .rack-app[data-intro] > .screen-cables {
   display: none;
 }
 .rack-app[data-intro] .canvas-viewport {
-  inset: 244px 0 0;
-  overflow: hidden;
+  position: relative;
+  inset: auto;
+  flex: 1 0 280px;
+  overflow: auto;
 }
 .rack-app[data-intro] .canvas {
   background-color: #23322e;
-}
-@media (max-width: 760px) {
-  .rack-app[data-intro] .canvas-viewport {
-    top: 390px;
-  }
 }

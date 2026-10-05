@@ -52,6 +52,7 @@ import { TutorialCoach, TutorialHighlights } from './tutorial/TutorialCoach';
 import { lessonSignal } from '@/lib/tutorial-scope';
 import { resizeTutorialDemo } from '@/lib/tutorial-demo';
 import { TutorialWelcome } from './tutorial/TutorialWelcome';
+import { TutorialNotes } from './tutorial/TutorialNotes';
 
 type Point = { x: number; y: number };
 type AddMenu = Point & { screenX: number; screenY: number };
@@ -66,6 +67,7 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
   const [introMuted, setIntroMuted] = useState(true);
   const [tutorialProbe, setTutorialProbe] = useState<ProbeTarget | null>(null);
   const [hoveredModule, setHoveredModule] = useState<string | null>(null);
+  const [focusedModule, setFocusedModule] = useState<string | null>(null);
   const [probe, setProbe] = useState<ProbeAnchor | null>(null),
     [scopeFrame, setScopeFrame] = useState<ScopeFrame | null>(null);
   const [patch, setPatch] = useState<Patch | null>(null);
@@ -750,6 +752,15 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
         onHover={(hovered) => setHoveredModule(hovered ? patch.output!.id : null)}
         renderPort={(port) => renderPort(patch.output!, port, 'in')}
       />
+      {intro && (
+        <TutorialWelcome
+          running={running}
+          muted={introMuted}
+          busy={busy}
+          onListen={() => void toggleIntroMute()}
+          onBegin={() => void enterTutorialStage(0)}
+        />
+      )}
       <div
         className="canvas-viewport"
         ref={viewport}
@@ -769,9 +780,25 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
             ref={surface}
             style={{ width, height, transform: `scale(${patch.zoom})` }}
             onClick={openMenu}
-            onPointerDownCapture={() => {
+            onPointerDownCapture={(e) => {
               skipPatchClick.current = false;
+              if (intro)
+                setHoveredModule(
+                  (e.target as HTMLElement).closest<HTMLElement>('[data-module-id]')?.dataset
+                    .moduleId ?? null,
+                );
             }}
+            onPointerUpCapture={(e) => {
+              if (e.pointerType !== 'mouse') setHoveredModule(null);
+            }}
+            onPointerCancelCapture={() => setHoveredModule(null)}
+            onFocusCapture={(e) =>
+              setFocusedModule(
+                (e.target as HTMLElement).closest<HTMLElement>('[data-module-id]')?.dataset
+                  .moduleId ?? null,
+              )
+            }
+            onBlurCapture={() => setFocusedModule(null)}
             onClickCapture={(e) => {
               if (skipPatchClick.current && e.detail !== 0) {
                 skipPatchClick.current = false;
@@ -851,6 +878,12 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
                 renderPort={(port, direction) => renderPort(m, port, direction)}
               />
             ))}
+            {intro && (
+              <TutorialNotes
+                modules={patch.modules}
+                activeModuleIds={[hoveredModule, focusedModule]}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -865,15 +898,6 @@ export default function Rack({ tutorial = false }: { tutorial?: boolean }) {
           <button onClick={() => setExploring(false)}>Tutorial complete · Show guide</button>
           <Link href="/">My rack →</Link>
         </div>
-      )}
-      {intro && (
-        <TutorialWelcome
-          running={running}
-          muted={introMuted}
-          busy={busy}
-          onListen={() => void toggleIntroMute()}
-          onBegin={() => void enterTutorialStage(0)}
-        />
       )}
       {guided && !intro && (
         <>

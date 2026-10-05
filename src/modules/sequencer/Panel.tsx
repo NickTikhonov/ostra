@@ -14,7 +14,8 @@ import {
 import { ModuleKnob, useModule } from '@/components/controls/ModuleControls';
 import { Knob } from '@/components/controls/Knob';
 import { StepSlider } from '@/components/controls/StepSlider';
-import { clamp, ORDERS } from './data.js';
+import { clamp, ORDERS, resizeData } from './data.js';
+import { definition } from './definition.js';
 import type { SequenceData } from './data.js';
 import styles from './panel.module.css';
 
@@ -72,7 +73,9 @@ export default function Panel() {
   const data = module.data as SequenceData;
   const length = Math.round(module.params.length),
     mode = Math.round(module.params.mode);
-  const [selected, setSelected] = useState(0);
+  const [selection, setSelected] = useState(0);
+  const selected = Math.min(selection, data.steps.length - 1);
+  const pageStart = Math.floor(selected / 8) * 8;
   const [previous, setPrevious] = useState<number[] | null>(null);
   function change<K extends keyof SequenceData>(key: K, value: SequenceData[K]) {
     setData({ ...data, [key]: value });
@@ -157,43 +160,69 @@ export default function Panel() {
         </div>
       </div>
       <div className={styles.steps}>
-        {data.steps.map((value, i) => (
-          <StepSlider
-            key={i}
-            index={i}
-            value={value}
-            min={data.rangeMin}
-            max={data.rangeMax}
-            enabled={data.gates[i]}
-            active={running && display.step === i}
-            selected={selected === i}
-            skipped={data.skips[i]}
-            locked={data.locks[i]}
-            inactive={i >= length}
-            onBegin={beginEdit}
-            onChange={(v) =>
-              change(
-                'steps',
-                data.steps.map((n, k) => (k === i ? v : n)),
-              )
-            }
-            onToggle={() => {
-              beginEdit();
-              change(
-                'gates',
-                data.gates.map((v, n) => (n === i ? !v : v)),
-              );
-            }}
-            onSelect={() => setSelected(i)}
-          />
-        ))}
+        {data.steps.slice(pageStart, pageStart + 8).map((value, offset) => {
+          const i = pageStart + offset;
+          return (
+            <StepSlider
+              key={i}
+              index={i}
+              value={value}
+              min={data.rangeMin}
+              max={data.rangeMax}
+              enabled={data.gates[i]}
+              active={running && display.step === i}
+              selected={selected === i}
+              skipped={data.skips[i]}
+              locked={data.locks[i]}
+              inactive={i >= length}
+              onBegin={beginEdit}
+              onChange={(v) =>
+                change(
+                  'steps',
+                  data.steps.map((n, k) => (k === i ? v : n)),
+                )
+              }
+              onToggle={() => {
+                beginEdit();
+                change(
+                  'gates',
+                  data.gates.map((v, n) => (n === i ? !v : v)),
+                );
+              }}
+              onSelect={() => setSelected(i)}
+            />
+          );
+        })}
       </div>
       <div
         className={styles.stageControls}
         role="group"
         aria-label={`Stage ${selected + 1} controls`}
       >
-        <span className={styles.stageLabel}>STAGE {selected + 1}</span>
+        <div className={styles.stageLabel}>
+          <span>STAGE {selected + 1}</span>
+          {data.steps.length > 8 && (
+            <div className={styles.pages} aria-label="Sequence pages">
+              <button
+                aria-label="Previous eight stages"
+                disabled={pageStart === 0}
+                onClick={() => setSelected(pageStart - 8)}
+              >
+                <ArrowLeft size={10} />
+              </button>
+              <span>
+                {pageStart + 1}–{pageStart + 8}
+              </span>
+              <button
+                aria-label="Next eight stages"
+                disabled={pageStart + 8 >= data.steps.length}
+                onClick={() => setSelected(pageStart + 8)}
+              >
+                <ArrowRight size={10} />
+              </button>
+            </div>
+          )}
+        </div>
         <div className={styles.stageFields}>
           <label>
             <span>BEHAVIOUR</span>
@@ -267,7 +296,17 @@ export default function Panel() {
       <div className={styles.playback}>
         <ModuleKnob id="tempo" />
         <ModuleKnob id="glide" />
-        <ModuleKnob id="length" />
+        <Knob
+          param={definition.params.find((p) => p.id === 'length')!}
+          value={length}
+          onBegin={beginEdit}
+          onChange={(value) => {
+            const next = Math.round(value);
+            setData(resizeData(data, next));
+            setParam('length', next);
+            setPrevious(null);
+          }}
+        />
         <div className={styles.order}>
           <button
             aria-label={`Playback order: ${ORDERS[mode]}`}

@@ -1,5 +1,5 @@
 'use client';
-import { ArrowRight, Play, Volume2 } from 'lucide-react';
+import { Play, Volume2 } from 'lucide-react';
 import Link from 'next/link';
 import styles from './TutorialWelcome.module.css';
 
@@ -19,32 +19,30 @@ export function TutorialWelcome({
   return (
     <section className={styles.welcome} aria-label="Introduction to modular synthesis">
       <div className={styles.masthead}>
-        <span>
-          ostra <small>A FIRST PATCH</small>
-        </span>
-        <Link href="/">My rack →</Link>
+        <div className={styles.identity}>
+          <span className={styles.wordmark}>ostra</span>
+          <span>Learn</span>
+        </div>
+        <Link href="/">My rack</Link>
       </div>
       <div className={styles.content}>
-        <div>
-          <h1>
-            Program your own
-            <br /> <em>musical instrument.</em>
-          </h1>
-          <p className={styles.intro}>
-            Modular synthesisers give you a way to connect and process electronic signals to create
-            complex and evolving music. Start making music with Ostra with this tutorial.
-          </p>
-        </div>
-        <div className={styles.invitation}>
-          <div className={styles.patchName}>
-            <span className={running ? styles.live : ''} /> GLASS GARDEN{' '}
-            <small>GENERATIVE PATCH</small>
+        <div className={styles.lesson}>
+          <h1>Learn modular synthesis.</h1>
+          <p>Build your own modular sequence from scratch in 15 minutes.</p>
+          <div className={styles.lessonAction}>
+            <button className={styles.begin} disabled={busy} onClick={onBegin}>
+              Start the first lesson
+            </button>
+            <span>No experience needed.</span>
           </div>
+        </div>
+        <div className={styles.example}>
+          <h2>Glass Garden</h2>
           <p>
-            A generative modular patch with an evolving polyrhythm, shifting bell tones and warm,
-            lingering echoes. Try turning the knobs to make it your own.
+            This patch plays itself. Press Listen, then turn <strong>DECAY</strong> on the leftmost{' '}
+            <strong>TINE</strong> to change how long the bells ring.
           </p>
-          <div className={styles.actions}>
+          <div className={styles.exampleAction}>
             <button
               className={styles.play}
               disabled={busy}
@@ -52,18 +50,20 @@ export function TutorialWelcome({
               aria-pressed={!muted}
               aria-label={muted ? 'Listen to Glass Garden' : 'Mute Glass Garden'}
             >
-              {muted ? <Play size={15} fill="currentColor" /> : <Volume2 size={17} />}
-              {muted ? 'Listen' : 'Mute'}
+              {muted ? (
+                <Play size={14} fill="currentColor" aria-hidden="true" />
+              ) : (
+                <Volume2 size={16} aria-hidden="true" />
+              )}
+              {muted ? 'Listen to the patch' : 'Mute the patch'}
             </button>
-            <button className={styles.begin} disabled={busy} onClick={onBegin}>
-              Learn to patch <ArrowRight size={15} />
-            </button>
+            <span role="status">
+              {busy ? 'Starting…' : muted ? 'Sound off' : running ? 'Sound on' : 'Audio paused'}
+            </span>
           </div>
-          <p className={styles.next}>
-            Next, we’ll build a patch from scratch—one connection at a time. No experience needed.
-          </p>
         </div>
       </div>
+      <p className={styles.mobileHint}>Swipe across the rack to see the other modules.</p>
     </section>
   );
 }

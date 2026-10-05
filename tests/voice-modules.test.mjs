@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { AUDIO_MODULES } from '../src/modules/audio.generated.js';
-import { createData, restoreData } from '../src/modules/sequencer/data.js';
+import { createData, restoreData, resizeData } from '../src/modules/sequencer/data.js';
 
 function setup(type, params = {}, sampleRate = 48000) {
   const { definition, processor } = AUDIO_MODULES[type];
@@ -123,3 +123,59 @@ for (const sampleRate of [44100, 48000, 96000]) {
     near(t.c.outputs.env1, 0);
   });
 }
+
+test('PATH grows to eight pages, retains shortened phrases, and bounds corrupt saves', () => {
+  const original = createData(),
+    expanded = resizeData(original, 64);
+  assert.equal(expanded.steps.length, 64);
+  assert.deepEqual(expanded.steps.slice(0, 8), original.steps);
+  expanded.steps[63] = 1.25;
+  assert.deepEqual(resizeData(expanded, 8), expanded);
+  assert.deepEqual(restoreData({ version: 4, params: { length: 64 }, data: expanded }), expanded);
+  const corrupt = restoreData({
+    version: 4,
+    params: { length: 1000000 },
+    data: { steps: [NaN, Infinity] },
+  });
+  assert.equal(corrupt.steps.length, 64);
+  assert.ok(corrupt.steps.every(Number.isFinite));
+  assert.equal(
+    createData().steps.length,
+    8,
+    'new and tutorial modules still begin with eight stages',
+  );
+});
+
+for (const length of [13, 64]) {
+  test(`PATH visits all ${length} stages and wraps without truncating to eight`, () => {
+    const t = setup('sequencer', { length }, 1000);
+    t.c.data = resizeData(createData(), length);
+    t.c.data.steps = t.c.data.steps.map((_, i) => i / 12);
+    t.c.connected.clock = true;
+    for (let tick = 0; tick <= length; tick++) {
+      t.c.inputs.clock = 0;
+      t.step(0.019);
+      t.c.inputs.clock = 5;
+      const out = t.step();
+      assert.equal(t.c.state.step, tick % length);
+      near(out.pitch, (tick % length) / 12, 1e-9);
+    }
+  });
+}
+
+test('PATH ties sustain a gate through clock jitter, then release for a rest', () => {
+  const t = setup('sequencer', {}, 1000);
+  t.c.connected.clock = true;
+  t.c.data.gateLengths.fill(1);
+  t.c.data.gates[2] = false;
+  t.c.inputs.clock = 5;
+  assert.equal(t.step().gate, 5);
+  t.c.inputs.clock = 0;
+  t.step(0.099);
+  t.c.inputs.clock = 5;
+  assert.equal(t.step().gate, 5);
+  t.c.inputs.clock = 0;
+  for (let n = 0; n < 103; n++) assert.equal(t.step().gate, 5);
+  t.c.inputs.clock = 5;
+  assert.equal(t.step().gate, 0);
+});

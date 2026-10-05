@@ -70,16 +70,19 @@
   position: absolute;
   left: 14px;
   width: 306px;
-  top: 251px;
+  top: 247px;
   height: 55px;
   z-index: 3;
   color: #294e68;
 }
 .stageLabel {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 14px;
   font: 600 7px var(--mono);
   letter-spacing: 1px;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
 }
 .stageFields {
   display: grid;
@@ -185,4 +188,25 @@
 .panel[data-port-style='badge'] :global(.knob-label) {
   font-size: 8px;
   letter-spacing: 0.5px;
+}
+
+.pages {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  letter-spacing: 0;
+}
+.pages button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 16px;
+  border-radius: 3px;
+  color: #294e68;
+  background: #eeeedd;
+}
+.pages button:disabled {
+  opacity: 0.3;
+  cursor: default;
 }
