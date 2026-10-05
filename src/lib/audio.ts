@@ -74,6 +74,19 @@ export class AudioEngine {
   }
 
   async start(patch: Patch, automatic = false) {
+    // iOS treats Web Audio as ambient by default, so the ring/silent switch
+    // can mute a running synth. Claim media playback only on an explicit start,
+    // before creating/resuming the context; the muted welcome must not take it.
+    // https://bugs.webkit.org/show_bug.cgi?id=237322
+    if (!automatic && typeof navigator !== 'undefined') {
+      try {
+        const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
+        if (session) session.type = 'playback';
+      } catch {
+        // This optional API is absent or restricted in some browsers/webviews.
+        // Keep ordinary gesture-initiated Web Audio working there.
+      }
+    }
     if (!this.initializing) this.initializing = this.initialize();
     const initializing = this.initializing;
     // Request resume during the gesture, before waiting for the worklet to load.

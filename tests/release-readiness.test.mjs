@@ -150,6 +150,97 @@ class FakeNode {
 globalThis.AudioContext = FakeContext;
 globalThis.AudioWorkletNode = FakeNode;
 
+test('explicit playback selects the iOS media session before context creation and gesture resume', async (t) => {
+  const order = [],
+    session = { type: 'auto' };
+  t.mock.getter(globalThis, 'navigator', () => ({ audioSession: session }));
+  const OriginalContext = globalThis.AudioContext;
+  t.after(() => {
+    globalThis.AudioContext = OriginalContext;
+  });
+  globalThis.AudioContext = class extends FakeContext {
+    constructor() {
+      super();
+      order.push(['create', session.type]);
+      this.audioWorklet.addModule = () =>
+        new Promise((resolve) => {
+          this.finishLoading = resolve;
+        });
+    }
+    async resume() {
+      order.push(['resume', session.type]);
+      await super.resume();
+    }
+  };
+  const engine = new AudioEngine();
+  try {
+    const started = engine.start(empty());
+    assert.deepEqual(
+      order,
+      [
+        ['create', 'playback'],
+        ['resume', 'playback'],
+      ],
+      'resume is requested before asynchronous loading finishes',
+    );
+    engine.context.finishLoading();
+    await started;
+    assert.equal(engine.context.level, 1);
+    await engine.stop();
+    session.type = 'auto';
+    await engine.start(empty());
+    assert.equal(session.type, 'playback', 'restarting restores the playback category too');
+  } finally {
+    await engine.close();
+  }
+});
+
+test('muted autoplay leaves the system audio category alone until the user starts playback', async (t) => {
+  const session = { type: 'auto' };
+  t.mock.getter(globalThis, 'navigator', () => ({ audioSession: session }));
+  const engine = new AudioEngine();
+  try {
+    engine.setMuted(true);
+    await engine.start(empty(), true);
+    assert.equal(session.type, 'auto');
+    assert.equal(engine.context.level, 0);
+    await engine.start(empty());
+    assert.equal(session.type, 'playback');
+    assert.equal(engine.context.level, 0, 'audio stays muted until the welcome explicitly unmutes');
+  } finally {
+    await engine.close();
+  }
+});
+
+test('an unavailable or restricted Audio Session API does not prevent normal playback', async (t) => {
+  for (const navigator of [
+    {},
+    {
+      get audioSession() {
+        throw new Error('Restricted');
+      },
+    },
+    {
+      audioSession: {
+        set type(_) {
+          throw new Error('Unsupported');
+        },
+      },
+    },
+  ]) {
+    const mock = t.mock.getter(globalThis, 'navigator', () => navigator);
+    const engine = new AudioEngine();
+    try {
+      await engine.start(empty());
+      assert.equal(engine.context.state, 'running');
+      assert.equal(engine.context.level, 1);
+    } finally {
+      await engine.close();
+      mock.mock.restore();
+    }
+  }
+});
+
 test('stopping transport waits for the final recording chunk before suspending', async () => {
   const engine = new AudioEngine(),
     completed = [];
